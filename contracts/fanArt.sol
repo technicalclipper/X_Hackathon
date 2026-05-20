@@ -57,7 +57,8 @@ contract FanEngagementPool is ERC721URIStorage, Ownable {
     event BidPlaced(uint256 tokenId, address bidder, uint256 amount);
     event AuctionEnded(uint256 tokenId, address winner, uint256 amount);
 
-    constructor() ERC721("FanEngagementNFT", "FENFT") {}
+    constructor() ERC721("FanEngagementNFT", "FENFT") Ownable(msg.sender) {}
+
 
     modifier requireTokens(address user, uint256 minTokens) {
         require(psgToken.balanceOf(user) >= minTokens, "Insufficient PSG tokens");
