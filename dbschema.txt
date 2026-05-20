@@ -1,0 +1,76 @@
+2. pools
+sql
+Copy
+CREATE TABLE pools (
+  id SERIAL PRIMARY KEY,
+  pool_type VARCHAR(20) NOT NULL, -- 'TIFO', 'MATCH_VIDEO', 'JERSEY', 'TICKETS'
+  match_id TEXT NOT NULL,
+  submission_deadline BIGINT NOT NULL,
+  voting_deadline BIGINT NOT NULL,
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+3. submissions
+sql
+Copy
+CREATE TABLE submissions (
+  id SERIAL PRIMARY KEY,
+  pool_id INTEGER REFERENCES pools(id) ON DELETE CASCADE,
+  creator_address VARCHAR(42) NOT NULL,
+  content_url TEXT NOT NULL, -- IPFS/Firebase/etc.
+  vote_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+4. votes
+sql
+Copy
+CREATE TABLE votes (
+  id SERIAL PRIMARY KEY,
+  pool_id INTEGER REFERENCES pools(id) ON DELETE CASCADE,
+  submission_id INTEGER REFERENCES submissions(id) ON DELETE CASCADE,
+  voter_address VARCHAR(42) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(pool_id, voter_address) -- one vote per wallet per pool
+);
+
+5.
+nft_mints (if winners get minted)
+sql
+Copy
+CREATE TABLE nft_mints (
+  id SERIAL PRIMARY KEY,
+  submission_id INTEGER REFERENCES submissions(id),
+  minted_token_id VARCHAR(255),
+  mint_tx_hash VARCHAR(66),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+6.
+: Auction Table 
+
+
+sql
+Copy
+CREATE TABLE auctions (
+  token_id INTEGER PRIMARY KEY,
+  seller_address VARCHAR(42) NOT NULL,
+  min_bid BIGINT NOT NULL,
+  required_psg_tokens BIGINT NOT NULL,
+  highest_bid BIGINT,
+  highest_bidder_address VARCHAR(42),
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+7.
+And for bids history :
+
+sql
+Copy
+CREATE TABLE bids (
+  id SERIAL PRIMARY KEY,
+  token_id INTEGER REFERENCES auctions(token_id) ON DELETE CASCADE,
+  bidder_address VARCHAR(42) NOT NULL,
+  amount BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
