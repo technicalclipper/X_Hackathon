@@ -1,0 +1,137 @@
+🧱 Core Features of the Contract
+PSG Token Gating: Participation in submission, voting, and auction bidding requires owning a minimum number of PSG ERC-20 tokens.
+
+NFT Minting: The winner of a fan pool gets an NFT with a tokenURI tied to their content.
+
+Auction Marketplace: NFT owners can auction their NFTs. Bids are made in native currency (ETH), but only PSG token holders can bid.
+
+🔁 Full Functional Flow:
+🧩 1. Creating a Fan Pool (createPool)
+Who can call? onlyOwner
+
+Parameters:
+
+PoolType _poolType – Enum: TIFO, MATCH_VIDEO, etc.
+
+string _matchId – Unique match identifier.
+
+uint256 _submissionDeadline – Timestamp.
+
+uint256 _votingDeadline – Timestamp.
+
+Emits: PoolCreated
+
+Used For: Starting a new round of fan content submission and voting.
+
+🎨 2. Submitting to Pool (submitToPool)
+Who can call? Any user with ≥ 10 PSG tokens
+
+Parameters:
+
+_poolId – ID of the pool.
+
+_contentUrl – Link to IPFS or other content.
+
+Emits: SubmissionMade
+
+Used For: Uploading TIFO, matchday video, etc. to a pool.
+
+🗳️ 3. Voting on Submissions (vote)
+Who can call? Any user with ≥ 10 PSG tokens
+
+Parameters:
+
+_poolId – ID of the pool.
+
+_submissionId – ID of the submission.
+
+Emits: Voted
+
+Restrictions:
+
+One vote per wallet per pool.
+
+Must be within the voting deadline.
+
+Used For: Fans voting on best content.
+
+🏆 4. Minting the Winner NFT (mintWinner)
+Who can call? onlyOwner
+
+Parameters:
+
+_poolId – Pool to finalize.
+
+Emits: WinnerMinted
+
+Used For: Minting NFT to top-voted submission creator.
+
+🔍 5. Viewing Submissions (getSubmissions)
+Who can call? Anyone
+
+Returns: All submissions for a given pool.
+
+❌ 6. Closing Pool (closePool)
+Who can call? onlyOwner
+
+Used For: Deactivating a pool post event.
+
+🛒 NFT Auction Flow
+🏗️ 7. Creating Auction (createAuction)
+Who can call? NFT owner
+
+Parameters:
+
+tokenId – NFT ID to auction.
+
+minBid – Minimum acceptable ETH bid.
+
+requiredPsgTokens – Minimum PSG token balance bidder must hold.
+
+Emits: AuctionCreated
+
+Used For: Listing NFT for auction.
+
+💸 8. Placing a Bid (placeBid)
+Who can call? Any user (must own required PSG tokens)
+
+How it works:
+
+Sends ETH as msg.value
+
+Checks if user has required PSG tokens.
+
+Validates that bid is above minBid and current highestBid.
+
+Refunds the previous highest bidder (if any).
+
+Emits: BidPlaced
+
+🏁 9. Ending Auction (endAuction)
+Who can call? Seller (NFT owner)
+
+Process:
+
+Ends the auction.
+
+Transfers NFT to highestBidder.
+
+Sends ETH to seller.
+
+Emits: AuctionEnded
+
+🔐 Token Gating Summary
+Action	Token Required (PSG)
+Submit	≥ 10 tokens
+Vote	≥ 10 tokens
+Place Bid	≥ requiredPsgTokens (set by seller)
+
+📜 Events Summary
+Event	Triggered By	Purpose
+PoolCreated	createPool()	Log new pool
+SubmissionMade	submitToPool()	Log submission
+Voted	vote()	Log vote
+WinnerMinted	mintWinner()	NFT to winner
+AuctionCreated	createAuction()	Start new NFT auction
+BidPlaced	placeBid()	Bid update
+AuctionEnded	endAuction()	Finalize aucti
