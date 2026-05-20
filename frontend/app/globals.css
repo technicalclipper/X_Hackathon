@@ -1,26 +1,249 @@
+@import "tailwindcss/preflight";
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Import retro fonts */
+@import url("https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap");
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Retro Macintosh Color Variables */
+    --mac-beige: #f2f2f2;
+    --mac-cream: #ffefd5;
+    --mac-gray: #c0c0c0;
+    --mac-green: #00ff41;
+    --mac-amber: #ffb000;
+    --mac-blue: #0080ff;
+    --mac-dark-gray: #2c2c2c;
+    --mac-charcoal: #1a1a1a;
+    --mac-red: #ff0040;
+    --mac-purple: #8000ff;
+  }
+
+  body {
+    font-family: "Share Tech Mono", monospace;
+    background-color: var(--mac-beige);
+    color: var(--mac-charcoal);
+  }
+
+  /* Custom scrollbar for retro feel */
+  ::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--mac-gray);
+    border: 2px solid black;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--mac-dark-gray);
+    border: 2px solid black;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--mac-charcoal);
+  }
+
+  /* CRT screen effect */
+  .crt-screen {
+    position: relative;
+    background: black;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .crt-screen::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 65, 0.03) 2px,
+      rgba(0, 255, 65, 0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .crt-screen::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 255, 65, 0.1) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 1001;
+  }
+
+  /* Retro pixelated images */
+  .pixelated {
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+
+  /* Classic Mac window styling */
+  .mac-window {
+    background: var(--mac-beige);
+    border: 2px solid black;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+  }
+
+  .mac-titlebar {
+    background: linear-gradient(to bottom, #e5e5e5, #cccccc);
+    border-bottom: 1px solid #999;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+  }
+
+  /* Retro button styling */
+  .retro-button {
+    background: var(--mac-gray);
+    border: 2px solid black;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+    transition: all 0.1s ease;
+  }
+
+  .retro-button:hover {
+    background: #d0d0d0;
+  }
+
+  .retro-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* Terminal-style text */
+  .terminal-text {
+    font-family: "VT323", monospace;
+    color: var(--mac-green);
+    background: black;
+    text-shadow: 0 0 5px currentColor;
+  }
+
+  /* Retro grid pattern */
+  .retro-grid {
+    background-image: linear-gradient(
+        rgba(0, 255, 65, 0.1) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Glitch effect */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .glitch::before {
+    animation: glitch-1 0.5s infinite;
+    color: var(--mac-red);
+    z-index: -1;
+  }
+
+  .glitch::after {
+    animation: glitch-2 0.5s infinite;
+    color: var(--mac-blue);
+    z-index: -2;
+  }
+
+  @keyframes glitch-1 {
+    0%,
+    14%,
+    15%,
+    49%,
+    50%,
+    99%,
+    100% {
+      transform: translate(0);
+    }
+    15%,
+    49% {
+      transform: translate(-2px, 0);
+    }
+  }
+
+  @keyframes glitch-2 {
+    0%,
+    20%,
+    21%,
+    62%,
+    63%,
+    99%,
+    100% {
+      transform: translate(0);
+    }
+    21%,
+    62% {
+      transform: translate(2px, 0);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Utility classes for retro styling */
+  .pixel-font {
+    font-family: "VT323", monospace;
+  }
+
+  .retro-font {
+    font-family: "Orbitron", monospace;
+  }
+
+  .mono-font {
+    font-family: "Share Tech Mono", monospace;
+  }
+}
+
+@layer utilities {
+  /* Custom shadows for retro feel */
+  .retro-shadow {
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+  }
+
+  .retro-shadow-sm {
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  }
+
+  .retro-shadow-lg {
+    box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Screen glow effects */
+  .screen-glow {
+    box-shadow: 0 0 10px var(--mac-green), 0 0 20px var(--mac-green),
+      0 0 30px var(--mac-green);
+  }
+
+  .amber-glow {
+    box-shadow: 0 0 10px var(--mac-amber), 0 0 20px var(--mac-amber),
+      0 0 30px var(--mac-amber);
+  }
 }
