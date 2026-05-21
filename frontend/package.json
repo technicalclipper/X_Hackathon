@@ -16,6 +16,7 @@
     "@react-three/drei": "^10.5.0",
     "@react-three/fiber": "^9.2.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@supabase/supabase-js": "^2.50.5",
     "@types/three": "^0.178.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.3",
