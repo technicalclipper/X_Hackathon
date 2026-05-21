@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Marquee from "@/components/ui/marquee";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   Circle,
@@ -21,6 +22,7 @@ import {
 import useCanvasCursor from "@/hooks/useCanvasCursor";
 
 export default function Home() {
+  const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [terminalText, setTerminalText] = useState("");
   const [currentFeature, setCurrentFeature] = useState(0);
@@ -275,11 +277,12 @@ export default function Home() {
                 >
                   <Button
                     size="lg"
+                    onClick={() => router.push("/clubselect")}
                     className="text-xl font-black px-12 py-6 text-main-foreground bg-main hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 group relative overflow-hidden"
                   >
                     <span className="relative z-10 flex items-center gap-3">
                       <Shield className="w-5 h-5 group-hover:animate-spin" />
-                      START
+                      CREATE FAN ART
                       <Heart className="w-5 h-5 group-hover:animate-pulse" />
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-green-100/20 to-blue-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
