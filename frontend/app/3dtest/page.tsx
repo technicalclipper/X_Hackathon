@@ -1,9 +1,9 @@
 "use client";
 
-import { GLBViewer, RetroWindow, RetroButton } from "@/components";
+import GLBViewer from "@/components/3d/GLBViewer";
 import { useRetroSound } from "@/hooks/useRetroSound";
 
-export default function Home() {
+function Home() {
   const { playStartupSound, playClickSound } = useRetroSound();
 
   const handleStartupClick = () => {
@@ -42,7 +42,7 @@ export default function Home() {
             // Model controls
             modelOffset={[0, 0, 1]} // Model position offset
             // Debug overlay
-            showDebug={false}
+            showDebug={true}
             // Debug control examples - customize which metrics to show
             showCameraMetrics={true}
             showCameraPosition={true}
@@ -66,3 +66,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default Home;
