@@ -192,11 +192,11 @@ export const useSubmitToPool = () => {
       const { data, error } = await supabase
         .from('submissions')
         .insert({
-          id: submissionData.submissionId, // Use the ID from the contract event
           pool_id: submissionData.poolId,
           creator_address: submissionData.creatorAddress,
           content_url: submissionData.contentUrl,
-          vote_count: 0
+          vote_count: 0,
+          contract_submission_id: submissionData.submissionId // Store contract ID separately
         })
         .select()
         .single();

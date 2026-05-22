@@ -6,7 +6,7 @@ export interface Submission {
   pool_id: number;
   creator_address: string;
   content_url: string;
-  description?: string;
+  contract_submission_id?: number;
   vote_count: number;
   created_at: string;
 }
@@ -29,7 +29,7 @@ export const useSubmissions = (poolId?: number) => {
       setIsLoading(true);
       setError('');
       
-      console.log('Fetching submissions from database...');
+      console.log('Fetching submissions from database...', { targetPoolId });
       
       let query = supabase
         .from('submissions')
@@ -38,6 +38,7 @@ export const useSubmissions = (poolId?: number) => {
 
       // Filter by pool ID if provided
       if (targetPoolId) {
+        console.log('Filtering by pool ID:', targetPoolId);
         query = query.eq('pool_id', targetPoolId);
       }
 
@@ -67,8 +68,7 @@ export const useSubmissions = (poolId?: number) => {
     }
 
     return submissions.filter(submission => 
-      submission.creator_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (submission.description && submission.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      submission.creator_address.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
