@@ -6,6 +6,7 @@ export { default as GLBViewer } from "./3d/GLBViewer";
 export { default as RetroWindow } from "./ui/RetroWindow";
 export { default as RetroButton } from "./ui/RetroButton";
 export { default as RetroTerminal } from "./ui/RetroTerminal";
+export { default as RetroGridBackground } from "./ui/RetroGridBackground";
 
 // Utilities
 export * from "../lib/utils";

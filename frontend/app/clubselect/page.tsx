@@ -12,7 +12,6 @@ import {
   Trophy,
   Lock,
   Unlock,
-  Star,
   Coins,
   ArrowLeft,
   Users,
@@ -35,7 +34,6 @@ interface Club {
 
 export default function ClubSelect() {
   const router = useRouter();
-  const [selectedClub, setSelectedClub] = useState<string | null>(null);
   const [userTokens] = useState({
     psg: 1,
     fcb: 0,
@@ -114,17 +112,11 @@ export default function ClubSelect() {
     },
   ];
 
-  const handleClubSelect = (clubId: string) => {
+  const handleEnterClub = (clubId: string) => {
     const club = clubs.find((c) => c.id === clubId);
     if (club?.isAvailable) {
-      setSelectedClub(clubId);
-    }
-  };
-
-  const handleEnterClub = () => {
-    if (selectedClub) {
-      // Navigate to the club's fan art studio
-      router.push(`/studio/${selectedClub}`);
+      // Navigate to PSG club room directly
+      router.push(`/clubroom/psg`);
     }
   };
 
@@ -133,7 +125,7 @@ export default function ClubSelect() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -161,7 +153,7 @@ export default function ClubSelect() {
                       </span>
                     </div>
                     <span className="text-gray-400 font-mono text-sm">
-                      / CLUB SELECTION
+                      / CLUB ROOMS
                     </span>
                   </div>
 
@@ -177,10 +169,10 @@ export default function ClubSelect() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-3xl font-black tracking-wider mb-2">
-                      SELECT YOUR CLUB
+                      GO TO CLUB ROOM
                     </CardTitle>
                     <p className="text-sm font-mono opacity-80">
-                      CHOOSE YOUR FOOTBALL DESTINY
+                      ENTER YOUR FOOTBALL SANCTUARY
                     </p>
                   </div>
 
@@ -294,9 +286,8 @@ export default function ClubSelect() {
                       ? "hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:scale-105"
                       : "opacity-60"
                   }
-                  ${selectedClub === club.id ? "ring-4 ring-green-400" : ""}
                 `}
-                onClick={() => handleClubSelect(club.id)}
+                onClick={() => handleEnterClub(club.id)}
               >
                 <CardContent className="p-4 text-center space-y-4">
                   {/* Large Logo with Shine Effect */}
@@ -369,28 +360,13 @@ export default function ClubSelect() {
                         whileHover={{ scale: 1.02 }}
                       >
                         <Unlock className="w-3 h-3 inline mr-1" />
-                        ENTER CLUB
+                        ENTER ROOM
                       </motion.div>
                     ) : (
                       <div className="bg-red-500 text-white px-3 py-2 border-3 border-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] font-black text-sm">
                         <Lock className="w-3 h-3 inline mr-1" />
                         NEED {club.shortName} TOKEN
                       </div>
-                    )}
-                  </div>
-
-                  {/* Selection Indicator - Fixed Height */}
-                  <div className="h-8 flex items-center justify-center">
-                    {club.isAvailable && selectedClub === club.id && (
-                      <motion.div
-                        className="bg-yellow-300 text-black px-3 py-1 border-3 border-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] font-black text-sm"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", bounce: 0.5 }}
-                      >
-                        <Star className="w-3 h-3 inline mr-1" />
-                        SELECTED
-                      </motion.div>
                     )}
                   </div>
                 </CardContent>
@@ -411,23 +387,6 @@ export default function ClubSelect() {
           </p>
         </motion.div>
       </div>
-
-      {/* Floating Background Elements */}
-      <motion.div
-        className="absolute top-20 right-10 opacity-5 select-none pointer-events-none"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      >
-        <Shield className="w-16 h-16" />
-      </motion.div>
-
-      <motion.div
-        className="absolute bottom-20 left-10 opacity-5 select-none pointer-events-none"
-        animate={{ rotate: -360 }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-      >
-        <Trophy className="w-12 h-12" />
-      </motion.div>
     </div>
   );
 }
