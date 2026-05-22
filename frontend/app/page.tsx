@@ -108,10 +108,10 @@ export default function Home() {
   }, [mousePosition, mouseX, mouseY]);
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden p-4 md:p-8 relative">
+    <div className="min-h-screen overflow-hidden p-4 md:p-8 relative">
       <canvas className="pointer-events-none fixed inset-0" id="canvas" />
       {/* Football-themed Floating Elements */}
-      <motion.div
+      {/* <motion.div
         className="absolute top-16 left-16 opacity-10 select-none"
         style={{
           x: useTransform(springX, (x) => x * 0.5),
@@ -149,10 +149,10 @@ export default function Home() {
         }}
       >
         <Flag className="w-8 h-8" />
-      </motion.div>
+      </motion.div> */}
 
       {/* Football Field Lines */}
-      <motion.div
+      {/* <motion.div
         className="absolute top-1/3 left-8 w-12 h-2 bg-black border-2 border-black opacity-5"
         style={{
           x: useTransform(springX, (x) => x * 0.6),
@@ -166,7 +166,7 @@ export default function Home() {
           x: useTransform(springX, (x) => x * -0.4),
           y: useTransform(springY, (y) => y * -0.4),
         }}
-      />
+      /> */}
 
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Main Hero Section */}
