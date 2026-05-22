@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { usePools } from '@/hooks/database/usePools';
 import { useSubmissions } from '@/hooks/database/useSubmissions';
 import { useSubmitToPool } from '@/hooks/contracts/useSubmitToPool';
+import { useVote } from '@/hooks/contracts/useVote';
+import { useVoteCounts } from '@/hooks/database/useVoteCounts';
 
 export default function ShowPoolsPage() {
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
@@ -64,8 +66,6 @@ export default function ShowPoolsPage() {
     
     // Form states
     poolDetails,
-    description,
-    setDescription,
     
     // Loading states
     isInitializing,
@@ -100,6 +100,36 @@ export default function ShowPoolsPage() {
     resetUpload,
     getGatewayUrl: getSubmitGatewayUrl
   } = useSubmitToPool();
+
+  const {
+    // Contract state
+    userAddress: voteUserAddress,
+    userPsgBalance: voteUserPsgBalance,
+    
+    // Loading states
+    isInitializing: isVoteInitializing,
+    isVoting,
+    error: voteError,
+    success: voteSuccess,
+    
+    // Transaction states
+    txHash: voteTxHash,
+    
+    // Functions
+    initializeContract: initializeVoteContract,
+    vote,
+    connectWallet: connectVoteWallet
+  } = useVote();
+
+  const {
+    voteCounts,
+    isLoading: isLoadingVoteCounts,
+    error: voteCountsError,
+    getVoteCount,
+    hasUserVoted,
+    hasUserVotedInPool,
+    refreshVoteCounts
+  } = useVoteCounts(selectedPoolId || undefined);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 p-8">
@@ -303,12 +333,21 @@ export default function ShowPoolsPage() {
               <h2 className="text-2xl font-bold text-gray-800">
                 Submissions for Pool #{selectedPoolId}
               </h2>
-              <button
-                onClick={() => setShowSubmissions(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Close
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={refreshSubmissions}
+                  disabled={isLoadingSubmissions}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
+                >
+                  {isLoadingSubmissions ? 'Loading...' : 'Refresh'}
+                </button>
+                <button
+                  onClick={() => setShowSubmissions(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
             {/* Submissions Search */}
@@ -322,6 +361,16 @@ export default function ShowPoolsPage() {
               />
             </div>
 
+            {/* Debug Info */}
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm">
+              <p><strong>Debug Info:</strong></p>
+              <p>Selected Pool ID: {selectedPoolId}</p>
+              <p>Total Submissions: {submissions.length}</p>
+              <p>Filtered Submissions: {filteredSubmissions.length}</p>
+              <p>Loading: {isLoadingSubmissions ? 'Yes' : 'No'}</p>
+              {submissionsError && <p className="text-red-600">Error: {submissionsError}</p>}
+            </div>
+
             {/* Submissions List */}
             {isLoadingSubmissions ? (
               <div className="text-center py-8">
@@ -331,6 +380,7 @@ export default function ShowPoolsPage() {
             ) : filteredSubmissions.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-600">No submissions found for this pool</p>
+                <p className="text-sm text-gray-500 mt-2">Pool ID: {selectedPoolId}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -364,19 +414,61 @@ export default function ShowPoolsPage() {
                           <span className="font-medium">Creator:</span> {submission.creator_address}
                         </p>
                         
-                        {submission.description && (
-                          <p className="text-sm text-gray-700 mb-2">
-                            {submission.description}
-                          </p>
-                        )}
+
                         
                         <p className="text-xs text-gray-500">
                           Submitted: {formatSubmissionDate(submission.created_at)}
                         </p>
+                        
+                        {/* Vote Button */}
+                        <div className="mt-3">
+                          {!voteUserAddress ? (
+                            <button
+                              onClick={connectVoteWallet}
+                              disabled={isVoteInitializing}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 disabled:bg-gray-300"
+                            >
+                              {isVoteInitializing ? 'Connecting...' : 'Connect to Vote'}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                if (submission.contract_submission_id !== undefined) {
+                                  vote(selectedPoolId!, submission.contract_submission_id);
+                                } else {
+                                  console.error('No contract submission ID found for submission:', submission.id);
+                                }
+                              }}
+                              disabled={isVoting || submission.contract_submission_id === undefined}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 disabled:bg-gray-300"
+                            >
+                              {isVoting ? 'Voting...' : 'Vote'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Voting Error Display */}
+            {voteError && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600 text-sm">{voteError}</p>
+              </div>
+            )}
+
+            {/* Voting Success Display */}
+            {voteSuccess && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-medium">✓ {voteSuccess}</p>
+                {voteTxHash && (
+                  <p className="text-sm text-green-600 mt-1">
+                    TX: {voteTxHash}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -498,19 +590,7 @@ export default function ShowPoolsPage() {
                   </div>
                 )}
 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe your submission..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+
 
                 {/* Submit Button */}
                 {uploadedCID && (

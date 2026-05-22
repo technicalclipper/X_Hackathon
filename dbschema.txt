@@ -18,6 +18,7 @@ CREATE TABLE submissions (
   pool_id INTEGER REFERENCES pools(id) ON DELETE CASCADE,
   creator_address VARCHAR(42) NOT NULL,
   content_url TEXT NOT NULL, -- IPFS/Firebase/etc.
+  contract_submission_id INTEGER, -- ID from smart contract
   vote_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
