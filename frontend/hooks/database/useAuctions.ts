@@ -241,3 +241,53 @@ export const useAuctions = () => {
     getGatewayUrl
   };
 }; 
+
+export interface EndedAuction {
+  token_id: number;
+  seller_address: string;
+  min_bid: string;
+  required_psg_tokens: string;
+  highest_bid: string | null;
+  highest_bidder_address: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export const useEndedAuctions = () => {
+  const [endedAuctions, setEndedAuctions] = useState<EndedAuction[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+
+  const fetchEndedAuctions = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const { data, error } = await supabase
+        .from('auctions')
+        .select('*')
+        .eq('active', false)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      setEndedAuctions(data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch ended auctions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEndedAuctions();
+  }, []);
+
+  const refreshEndedAuctions = () => {
+    fetchEndedAuctions();
+  };
+
+  return {
+    endedAuctions,
+    isLoading,
+    error,
+    refreshEndedAuctions,
+  };
+}; 

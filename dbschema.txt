@@ -72,6 +72,6 @@ CREATE TABLE bids (
   id SERIAL PRIMARY KEY,
   token_id INTEGER REFERENCES auctions(token_id) ON DELETE CASCADE,
   bidder_address VARCHAR(42) NOT NULL,
-  amount BIGINT NOT NULL,
+  amount VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
