@@ -615,7 +615,13 @@ export default function PSGClubRoom() {
                               </div>
                             </div>
 
-                            <Button className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
+                            <Button
+                              className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black"
+                              onClick={() =>
+                                contest.id === "1" &&
+                                router.push("/clubroom/psg/Kitdesign")
+                              }
+                            >
                               JOIN CONTEST
                               <ArrowRight className="w-4 h-4 ml-2" />
                             </Button>
