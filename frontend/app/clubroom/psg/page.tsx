@@ -56,6 +56,8 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  ShoppingBag,
+  ArrowRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -244,21 +246,19 @@ export default function PSGClubRoom() {
                             <ChevronDown className="w-4 h-4 ml-1" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <DropdownMenuContent className="w-56 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                           {category.items.map((item, itemIndex) => (
                             <DropdownMenuItem
                               key={itemIndex}
-                              className="hover:bg-gray-100"
+                              className="hover:bg-black hover:text-white font-bold text-black cursor-pointer border-b-2 border-gray-200 last:border-b-0"
                             >
                               <div className="flex items-center gap-2 w-full">
                                 <item.icon className="w-4 h-4" />
-                                <span className="font-semibold">
-                                  {item.label}
-                                </span>
+                                <span className="font-black">{item.label}</span>
                                 {item.badge && (
                                   <Badge
                                     variant="neutral"
-                                    className="ml-auto text-xs"
+                                    className="ml-auto text-xs bg-gray-200 text-black border-2 border-black"
                                   >
                                     {item.badge}
                                   </Badge>
@@ -351,149 +351,170 @@ export default function PSGClubRoom() {
           </div>
         </motion.div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Ongoing Contests */}
-          <motion.div
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <Card className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] h-full">
-              <CardHeader className="bg-black text-white p-4">
-                <CardTitle className="text-xl font-black tracking-wider flex items-center gap-2">
-                  <Trophy className="w-5 h-5" />
-                  ONGOING CONTESTS
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {contests.map((contest) => (
-                    <div
-                      key={contest.id}
-                      className="p-3 bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-black text-white flex items-center justify-center border border-border">
-                            <contest.icon className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="font-black text-sm">
-                              {contest.title}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {contest.description}
-                            </p>
-                            <p className="text-xs font-bold mt-2">
-                              {contest.reward}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="neutral" className="mb-2">
-                            {contest.deadline}
-                          </Badge>
-                          <p className="text-xs text-gray-600">
-                            {contest.participants} participants
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* NFT Marketplace */}
-          <motion.div
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <Card className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] h-full">
-              <CardHeader className="bg-black text-white p-4">
-                <CardTitle className="text-xl font-black tracking-wider flex items-center gap-2">
-                  <Gavel className="w-5 h-5" />
-                  NFT MARKETPLACE
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {nftAuctions.map((auction) => (
-                    <div
-                      key={auction.id}
-                      className="p-3 bg-gray-100 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-300 border-2 border-black flex items-center justify-center">
-                            <ImageIcon className="w-6 h-6 text-gray-600" />
-                          </div>
-                          <div>
-                            <p className="font-black text-sm">
-                              {auction.title}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              by {auction.creator}
-                            </p>
-                            <p className="text-xs font-bold mt-2">
-                              Current: {auction.currentBid}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="neutral" className="mb-2">
-                            {auction.timeLeft}
-                          </Badge>
-                          <p className="text-xs text-gray-600">
-                            {auction.bidders} bidders
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Creative Space Call to Action */}
+        {/* Main Content - Ongoing Contests as Primary */}
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="mt-8"
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mb-8"
         >
-          <Card className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <Card className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+            <CardHeader className="bg-black text-white p-6">
+              <CardTitle className="text-2xl font-black tracking-wider flex items-center gap-3">
+                <Trophy className="w-6 h-6" />
+                ONGOING CONTESTS
+              </CardTitle>
+              <p className="text-gray-300 font-mono text-sm">
+                JOIN THE COMPETITION AND SHOW YOUR PSG PRIDE
+              </p>
+            </CardHeader>
             <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-black mb-4">
-                  READY TO CREATE YOUR PSG MASTERPIECE?
-                </h3>
-                <p className="text-gray-600 mb-6 font-mono">
-                  Join thousands of PSG fans in creating the next legendary fan
-                  art
-                </p>
-                <div className="flex items-center justify-center gap-4">
-                  <Button className="bg-black text-white border-2 border-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
-                    <Upload className="w-4 h-4 mr-2" />
-                    SUBMIT YOUR ART
-                  </Button>
-                  <Button
-                    variant="neutral"
-                    className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {contests.map((contest) => (
+                  <motion.div
+                    key={contest.id}
+                    whileHover={{ scale: 1.02 }}
+                    className="p-4 bg-gray-50 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    BROWSE GALLERY
-                  </Button>
-                </div>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-black text-white flex items-center justify-center border-2 border-border">
+                          <contest.icon className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-black text-lg">{contest.title}</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {contest.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 border-2 border-black mb-3">
+                      <p className="text-sm font-black text-gray-800 mb-1">
+                        REWARD:
+                      </p>
+                      <p className="text-sm font-bold text-black">
+                        {contest.reward}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant="neutral"
+                        className="text-sm font-black bg-yellow-400 text-black border-2 border-black"
+                      >
+                        {contest.deadline} LEFT
+                      </Badge>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-gray-800">
+                          {contest.participants} PARTICIPANTS
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button className="w-full mt-4 bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
+                      JOIN CONTEST
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </motion.div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Secondary Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* NFT Marketplace Button */}
+          <motion.div
+            initial={{ x: -50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-black text-white flex items-center justify-center border-2 border-border">
+                    <Gavel className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black">NFT MARKETPLACE</h3>
+                    <p className="text-sm text-gray-600 font-mono">
+                      BUY, SELL & TRADE PSG NFTs
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-gray-100 p-2 border-2 border-black text-center">
+                    <p className="text-xs font-black text-gray-600">
+                      LIVE AUCTIONS
+                    </p>
+                    <p className="text-lg font-black">12</p>
+                  </div>
+                  <div className="bg-gray-100 p-2 border-2 border-black text-center">
+                    <p className="text-xs font-black text-gray-600">
+                      YOUR BIDS
+                    </p>
+                    <p className="text-lg font-black">3</p>
+                  </div>
+                  <div className="bg-gray-100 p-2 border-2 border-black text-center">
+                    <p className="text-xs font-black text-gray-600">
+                      YOUR NFTS
+                    </p>
+                    <p className="text-lg font-black">8</p>
+                  </div>
+                </div>
+
+                <Button className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  BROWSE MARKETPLACE
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Create Section */}
+          <motion.div
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-black text-white flex items-center justify-center border-2 border-border">
+                    <PenTool className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black">CREATE YOUR ART</h3>
+                    <p className="text-sm text-gray-600 font-mono">
+                      UNLEASH YOUR CREATIVITY
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="bg-gray-100 p-3 border-2 border-black">
+                    <p className="text-sm font-black">DRAFTS: 2</p>
+                  </div>
+                  <div className="bg-gray-100 p-3 border-2 border-black">
+                    <p className="text-sm font-black">SUBMITTED: 5</p>
+                  </div>
+                  <div className="bg-yellow-400 p-3 border-2 border-black">
+                    <p className="text-sm font-black">WINNERS: 1 🏆</p>
+                  </div>
+                </div>
+
+                <Button className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
+                  <Upload className="w-4 h-4 mr-2" />
+                  START CREATING
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
