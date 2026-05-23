@@ -6,6 +6,7 @@ import { useSubmissions } from '@/hooks/database/useSubmissions';
 import { useSubmitToPool } from '@/hooks/contracts/useSubmitToPool';
 import { useVote } from '@/hooks/contracts/useVote';
 import { useVoteCounts } from '@/hooks/database/useVoteCounts';
+import { useMintWinner } from '@/hooks/contracts/useMintWinner';
 
 export default function ShowPoolsPage() {
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
@@ -131,6 +132,31 @@ export default function ShowPoolsPage() {
     refreshVoteCounts
   } = useVoteCounts(selectedPoolId || undefined);
 
+  const {
+    // Contract state
+    userAddress: mintUserAddress,
+    isOwner,
+    
+    // Loading states
+    isInitializing: isMintInitializing,
+    isMinting,
+    error: mintError,
+    success: mintSuccess,
+    
+    // Transaction states
+    txHash: mintTxHash,
+    mintedTokenId,
+    winnerSubmissionId,
+    winnerAddress,
+    
+    // Functions
+    initializeContract: initializeMintContract,
+    mintWinner,
+    connectWallet: connectMintWallet,
+    isPoolReadyForMinting,
+    getPoolDetails: getMintPoolDetails
+  } = useMintWinner();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 p-8">
       <div className="max-w-6xl mx-auto">
@@ -195,6 +221,27 @@ export default function ShowPoolsPage() {
             >
               {isLoading ? 'Loading...' : 'Refresh'}
             </button>
+          </div>
+          
+          {/* Debug Info */}
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+            <p><strong>Debug Info:</strong></p>
+            <p>Mint User Address: {mintUserAddress || 'Not connected'}</p>
+            <p>Is Owner: {isOwner ? 'Yes' : 'No'}</p>
+            <p>Mint Initializing: {isMintInitializing ? 'Yes' : 'No'}</p>
+            
+            {/* Connect Wallet for Mint */}
+            {!mintUserAddress && (
+              <div className="mt-3">
+                <button
+                  onClick={connectMintWallet}
+                  disabled={isMintInitializing}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 text-sm"
+                >
+                  {isMintInitializing ? 'Connecting...' : 'Connect Wallet for Mint'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -292,6 +339,27 @@ export default function ShowPoolsPage() {
                         >
                           Submit Content
                         </button>
+                        
+                        {/* End Event Button - Only show for contract owner */}
+                        {isOwner ? (
+                          <button 
+                            onClick={async () => {
+                              if (!mintUserAddress) {
+                                await connectMintWallet();
+                              } else {
+                                await mintWinner(pool.id);
+                              }
+                            }}
+                            disabled={isMinting || isMintInitializing}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 text-sm"
+                          >
+                            {isMinting ? 'Minting Winner...' : isMintInitializing ? 'Connecting...' : 'End Event & Mint Winner'}
+                          </button>
+                        ) : (
+                          <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-xs text-center">
+                            Only owner can mint
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -467,6 +535,35 @@ export default function ShowPoolsPage() {
                 {voteTxHash && (
                   <p className="text-sm text-green-600 mt-1">
                     TX: {voteTxHash}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Mint Winner Error Display */}
+            {mintError && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600 text-sm">{mintError}</p>
+              </div>
+            )}
+
+            {/* Mint Winner Success Display */}
+            {mintSuccess && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-medium">✓ {mintSuccess}</p>
+                {mintTxHash && (
+                  <p className="text-sm text-green-600 mt-1">
+                    TX: {mintTxHash}
+                  </p>
+                )}
+                {mintedTokenId && (
+                  <p className="text-sm text-green-600">
+                    Token ID: {mintedTokenId}
+                  </p>
+                )}
+                {winnerAddress && (
+                  <p className="text-sm text-green-600">
+                    Winner: {winnerAddress.slice(0, 6)}...{winnerAddress.slice(-4)}
                   </p>
                 )}
               </div>
