@@ -91,6 +91,7 @@ function TShirtModel({
   backTexture,
   isDrawing,
   onDrawingChange,
+  isRotationLocked,
 }: {
   activeView: "front" | "back";
   activeTool: string;
@@ -104,10 +105,13 @@ function TShirtModel({
   backTexture: THREE.Texture | null;
   isDrawing: boolean;
   onDrawingChange: (drawing: boolean) => void;
+  isRotationLocked: boolean;
 }) {
   const meshRef = useRef<THREE.Group>(null);
   const tshirtMeshRef = useRef<THREE.Mesh>(null);
   const { raycaster, camera, pointer } = useThree();
+  const [lastPaintPosition, setLastPaintPosition] =
+    useState<THREE.Vector2 | null>(null);
 
   // Load T-shirt model
   let gltf;
@@ -117,9 +121,9 @@ function TShirtModel({
     console.warn("T-shirt model not found, using fallback");
   }
 
-  // Handle model rotation based on active view
+  // Handle model rotation based on active view (only if not locked)
   useFrame(() => {
-    if (meshRef.current) {
+    if (meshRef.current && !isRotationLocked) {
       const targetRotation = activeView === "front" ? 0 : Math.PI;
       meshRef.current.rotation.y = THREE.MathUtils.lerp(
         meshRef.current.rotation.y,
@@ -129,13 +133,18 @@ function TShirtModel({
     }
   });
 
-  // Handle mouse interactions
+  // Improved mouse interaction handlers with simplified UV mapping
   const handlePointerDown = useCallback(
     (event: any) => {
       event.stopPropagation();
 
-      if (activeTool === "brush" || activeTool === "eraser") {
+      if (
+        activeTool === "brush" ||
+        activeTool === "eraser" ||
+        activeTool === "fill"
+      ) {
         onDrawingChange(true);
+        setLastPaintPosition(null);
       }
 
       raycaster.setFromCamera(pointer, camera);
@@ -149,9 +158,13 @@ function TShirtModel({
         if (intersects.length > 0) {
           const intersection = intersects[0];
           const point = intersection.point;
-          const uv = intersection.uv || new THREE.Vector2(0.5, 0.5);
+          const uv = intersection.uv;
 
-          onModelClick(point, uv);
+          if (uv) {
+            // Simple UV mapping - use coordinates directly as they come from the model
+            onModelClick(point, uv);
+            setLastPaintPosition(uv);
+          }
         }
       }
     },
@@ -173,10 +186,13 @@ function TShirtModel({
 
         if (intersects.length > 0) {
           const intersection = intersects[0];
-          const point = intersection.point;
-          const uv = intersection.uv || new THREE.Vector2(0.5, 0.5);
+          const uv = intersection.uv;
 
-          onModelClick(point, uv);
+          if (uv) {
+            // Simple direct UV usage
+            onModelClick(intersection.point, uv);
+            setLastPaintPosition(uv);
+          }
         }
       }
     },
@@ -186,10 +202,11 @@ function TShirtModel({
   const handlePointerUp = useCallback(() => {
     if (isDrawing) {
       onDrawingChange(false);
+      setLastPaintPosition(null);
     }
   }, [isDrawing, onDrawingChange]);
 
-  // Render design elements as 3D overlays
+  // Render design elements as 3D overlays (only text and logos now)
   const renderDesignElements = () => {
     return designElements
       .filter((element) => element.visible && element.side === activeView)
@@ -216,51 +233,6 @@ function TShirtModel({
               >
                 {element.data.text || "Text"}
               </Text>
-            );
-
-          case "shape":
-            return (
-              <mesh
-                key={element.id}
-                position={position}
-                onClick={() => onElementSelect(element.id)}
-              >
-                {element.data.shape === "circle" ? (
-                  <circleGeometry args={[element.data.size || 0.1]} />
-                ) : element.data.shape === "square" ? (
-                  <planeGeometry
-                    args={[element.data.size || 0.2, element.data.size || 0.2]}
-                  />
-                ) : (
-                  <coneGeometry
-                    args={[
-                      element.data.size || 0.1,
-                      element.data.size || 0.2,
-                      3,
-                    ]}
-                  />
-                )}
-                <meshBasicMaterial
-                  color={element.data.color || "#000000"}
-                  transparent={true}
-                  opacity={0.8}
-                />
-                {selectedElement === element.id && (
-                  <lineSegments>
-                    <edgesGeometry
-                      args={[
-                        element.data.shape === "circle"
-                          ? new THREE.CircleGeometry(element.data.size || 0.1)
-                          : new THREE.PlaneGeometry(
-                              element.data.size || 0.2,
-                              element.data.size || 0.2
-                            ),
-                      ]}
-                    />
-                    <lineBasicMaterial color="#ffff00" linewidth={3} />
-                  </lineSegments>
-                )}
-              </mesh>
             );
 
           case "logo":
@@ -466,6 +438,7 @@ export default function TShirtEditor3D() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isRotationLocked, setIsRotationLocked] = useState(false);
 
   // Initialize canvases and textures
   useEffect(() => {
@@ -508,6 +481,7 @@ export default function TShirtEditor3D() {
     { id: "move", name: "Move", icon: Move, category: "selection" },
     { id: "brush", name: "Brush", icon: Brush, category: "drawing" },
     { id: "eraser", name: "Eraser", icon: Eraser, category: "drawing" },
+    { id: "fill", name: "Fill", icon: Palette, category: "drawing" },
     { id: "square", name: "Rectangle", icon: Square, category: "shapes" },
     { id: "circle", name: "Circle", icon: Circle, category: "shapes" },
     { id: "triangle", name: "Triangle", icon: Triangle, category: "shapes" },
@@ -546,7 +520,7 @@ export default function TShirtEditor3D() {
     "#808080",
   ];
 
-  // Paint on texture
+  // Paint on texture with simplified and accurate UV mapping
   const paintOnTexture = useCallback(
     (uv: THREE.Vector2) => {
       const canvas =
@@ -558,22 +532,28 @@ export default function TShirtEditor3D() {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Convert UV coordinates to canvas coordinates
+      // Simple direct UV mapping - no complex transformations
       const x = uv.x * canvas.width;
-      const y = (1 - uv.y) * canvas.height; // Flip Y coordinate
+      const y = uv.y * canvas.height;
 
-      ctx.globalCompositeOperation =
-        activeTool === "eraser" ? "destination-out" : "source-over";
+      // Clamp coordinates to canvas bounds
+      const clampedX = Math.max(0, Math.min(canvas.width - 1, x));
+      const clampedY = Math.max(0, Math.min(canvas.height - 1, y));
 
       if (activeTool === "brush") {
+        ctx.globalCompositeOperation = "source-over";
         ctx.fillStyle = brushColor;
         ctx.beginPath();
-        ctx.arc(x, y, brushSize * 2, 0, Math.PI * 2);
+        ctx.arc(clampedX, clampedY, brushSize * 2, 0, Math.PI * 2);
         ctx.fill();
       } else if (activeTool === "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
         ctx.beginPath();
-        ctx.arc(x, y, brushSize * 2, 0, Math.PI * 2);
+        ctx.arc(clampedX, clampedY, brushSize * 2, 0, Math.PI * 2);
         ctx.fill();
+      } else if (activeTool === "fill") {
+        // Flood fill implementation
+        floodFill(ctx, Math.floor(clampedX), Math.floor(clampedY), brushColor);
       }
 
       texture.needsUpdate = true;
@@ -581,16 +561,160 @@ export default function TShirtEditor3D() {
     [activeView, activeTool, brushColor, brushSize, frontTexture, backTexture]
   );
 
+  // Flood fill algorithm for fill tool
+  const floodFill = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      startX: number,
+      startY: number,
+      fillColor: string
+    ) => {
+      const imageData = ctx.getImageData(
+        0,
+        0,
+        ctx.canvas.width,
+        ctx.canvas.height
+      );
+      const data = imageData.data;
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+
+      // Convert fill color to RGB
+      const tempCanvas = document.createElement("canvas");
+      const tempCtx = tempCanvas.getContext("2d")!;
+      tempCtx.fillStyle = fillColor;
+      tempCtx.fillRect(0, 0, 1, 1);
+      const fillColorData = tempCtx.getImageData(0, 0, 1, 1).data;
+
+      // Get target color at start position
+      const startPos = (startY * width + startX) * 4;
+      const targetR = data[startPos];
+      const targetG = data[startPos + 1];
+      const targetB = data[startPos + 2];
+      const targetA = data[startPos + 3];
+
+      // If target color is same as fill color, return
+      if (
+        targetR === fillColorData[0] &&
+        targetG === fillColorData[1] &&
+        targetB === fillColorData[2] &&
+        targetA === fillColorData[3]
+      ) {
+        return;
+      }
+
+      // Stack for flood fill
+      const stack = [[startX, startY]];
+      const visited = new Set<string>();
+
+      while (stack.length > 0) {
+        const [x, y] = stack.pop()!;
+
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+        const key = `${x},${y}`;
+        if (visited.has(key)) continue;
+        visited.add(key);
+
+        const pos = (y * width + x) * 4;
+
+        // Check if current pixel matches target color
+        if (
+          data[pos] !== targetR ||
+          data[pos + 1] !== targetG ||
+          data[pos + 2] !== targetB ||
+          data[pos + 3] !== targetA
+        ) {
+          continue;
+        }
+
+        // Fill current pixel
+        data[pos] = fillColorData[0];
+        data[pos + 1] = fillColorData[1];
+        data[pos + 2] = fillColorData[2];
+        data[pos + 3] = fillColorData[3];
+
+        // Add neighboring pixels to stack
+        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    },
+    []
+  );
+
+  // Draw shape on texture
+  const drawShapeOnTexture = useCallback(
+    (uv: THREE.Vector2, shapeType: string, size: number, color: string) => {
+      const canvas =
+        activeView === "front" ? frontCanvasRef.current : backCanvasRef.current;
+      const texture = activeView === "front" ? frontTexture : backTexture;
+
+      if (!canvas || !texture) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const x = uv.x * canvas.width;
+      const y = uv.y * canvas.height;
+      const shapeSize = size * 100; // Scale size appropriately
+
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+
+      switch (shapeType) {
+        case "circle":
+          ctx.beginPath();
+          ctx.arc(x, y, shapeSize, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+
+        case "square":
+          ctx.fillRect(
+            x - shapeSize / 2,
+            y - shapeSize / 2,
+            shapeSize,
+            shapeSize
+          );
+          break;
+
+        case "triangle":
+          ctx.beginPath();
+          ctx.moveTo(x, y - shapeSize);
+          ctx.lineTo(x - shapeSize, y + shapeSize);
+          ctx.lineTo(x + shapeSize, y + shapeSize);
+          ctx.closePath();
+          ctx.fill();
+          break;
+      }
+
+      texture.needsUpdate = true;
+    },
+    [activeView, frontTexture, backTexture]
+  );
+
   // Handle model clicks
   const handleModelClick = useCallback(
     (point: THREE.Vector3, uv: THREE.Vector2) => {
-      if (activeTool === "brush" || activeTool === "eraser") {
+      if (
+        activeTool === "brush" ||
+        activeTool === "eraser" ||
+        activeTool === "fill"
+      ) {
         paintOnTexture(uv);
         return;
       }
 
       if (activeTool === "select" || activeTool === "move") return;
 
+      // Handle shapes - draw directly on texture instead of 3D overlays
+      if (["circle", "square", "triangle"].includes(activeTool)) {
+        drawShapeOnTexture(uv, activeTool, 0.15, brushColor);
+        return;
+      }
+
+      // Handle text and logos as 3D overlays
       const newElement: DesignElement = {
         id: `element-${Date.now()}`,
         type: activeTool as any,
@@ -610,23 +734,12 @@ export default function TShirtEditor3D() {
           };
           setShowTextInput(true);
           break;
-
-        case "circle":
-        case "square":
-        case "triangle":
-          newElement.type = "shape";
-          newElement.data = {
-            shape: activeTool,
-            color: brushColor,
-            size: 0.15,
-          };
-          break;
       }
 
       setDesignElements((prev) => [...prev, newElement]);
       setSelectedElement(newElement.id);
     },
-    [activeTool, brushColor, activeView, paintOnTexture]
+    [activeTool, brushColor, activeView, paintOnTexture, drawShapeOnTexture]
   );
 
   // Handle tool selection
@@ -1015,6 +1128,7 @@ export default function TShirtEditor3D() {
 
                   {/* Color Picker */}
                   {(activeTool === "brush" ||
+                    activeTool === "fill" ||
                     activeTool === "text" ||
                     ["circle", "square", "triangle"].includes(activeTool)) && (
                     <div>
@@ -1100,11 +1214,13 @@ export default function TShirtEditor3D() {
                       backTexture={backTexture}
                       isDrawing={isDrawing}
                       onDrawingChange={setIsDrawing}
+                      isRotationLocked={isRotationLocked}
                     />
 
                     <OrbitControls
                       enablePan={false}
                       enableZoom={true}
+                      enableRotate={!isRotationLocked}
                       maxPolarAngle={Math.PI / 2}
                       minPolarAngle={Math.PI / 4}
                       maxDistance={8}
@@ -1118,12 +1234,37 @@ export default function TShirtEditor3D() {
                   <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded border-2 border-white">
                     <h3 className="font-black text-sm mb-2">INSTRUCTIONS:</h3>
                     <ul className="text-xs space-y-1">
-                      <li>• Select brush/eraser to paint on texture</li>
-                      <li>• Click on T-shirt to add shapes/text</li>
-                      <li>• Use mouse to rotate the 3D model</li>
+                      <li>
+                        • <strong>Brush:</strong> Paint freehand on texture
+                      </li>
+                      <li>
+                        • <strong>Fill:</strong> Click to flood fill areas
+                      </li>
+                      <li>
+                        • <strong>Shapes:</strong> Draw directly on texture
+                      </li>
+                      <li>
+                        • <strong>Text:</strong> Add 3D text overlays
+                      </li>
+                      <li>
+                        • <strong>Lock:</strong> Disable rotation for precision
+                      </li>
                       <li>• Switch between front/back views</li>
-                      <li>• Add all required logos before submitting</li>
                     </ul>
+                  </div>
+
+                  {/* Model Controls */}
+                  <div className="absolute top-4 right-4 flex flex-col gap-2">
+                    <button
+                      onClick={() => setIsRotationLocked(!isRotationLocked)}
+                      className={`px-3 py-2 border-2 border-black font-black text-sm transition-all duration-200 hover:scale-105 ${
+                        isRotationLocked
+                          ? "bg-red-500 text-white"
+                          : "bg-green-500 text-white"
+                      }`}
+                    >
+                      {isRotationLocked ? "🔒 LOCKED" : "🔓 UNLOCKED"}
+                    </button>
                   </div>
 
                   {/* Active Tool Indicator */}
@@ -1137,6 +1278,13 @@ export default function TShirtEditor3D() {
                   <div className="absolute bottom-4 right-4 bg-blue-500 text-white p-2 border-2 border-black font-black text-sm">
                     Current Side: {activeView.toUpperCase()}
                   </div>
+
+                  {/* Fill Tool Indicator */}
+                  {activeTool === "fill" && (
+                    <div className="absolute bottom-16 left-4 bg-purple-500 text-white p-2 border-2 border-black font-black text-xs">
+                      Click on T-shirt to fill with color
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1399,10 +1547,38 @@ export default function TShirtEditor3D() {
         />
       )}
 
+      {/* Fill Tool Cursor */}
+      {activeTool === "fill" && (
+        <div
+          className="fixed pointer-events-none z-50 border-2 border-purple-500 rounded"
+          style={{
+            left: mousePosition.x,
+            top: mousePosition.y,
+            width: "20px",
+            height: "20px",
+            backgroundColor: brushColor,
+            opacity: 0.7,
+            transform: "translate(-50%, -50%)",
+            display:
+              mousePosition.x === 0 && mousePosition.y === 0 ? "none" : "block",
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
+            F
+          </div>
+        </div>
+      )}
+
       {/* Drawing Indicator */}
       {isDrawing && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 border-2 border-black font-black text-sm z-50 animate-pulse">
-          ✏️ {activeTool === "brush" ? "Painting" : "Erasing"}...
+          ✏️{" "}
+          {activeTool === "brush"
+            ? "Painting"
+            : activeTool === "fill"
+            ? "Filling"
+            : "Erasing"}
+          ...
         </div>
       )}
     </div>
