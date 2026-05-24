@@ -43,7 +43,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-// Interfaces
 interface Tool {
   id: string;
   name: string;
@@ -61,7 +60,6 @@ interface DesignElement {
   side: "front" | "back";
 }
 
-// Custom hook for mouse position
 function useMousePosition() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
@@ -77,13 +75,13 @@ function useMousePosition() {
   return mousePosition;
 }
 
-// T-Shirt Model Component with Texture Painting
 function TShirtModel({
   activeView,
   activeTool,
   brushColor,
   brushSize,
   onModelClick,
+  onMoveElement,
   designElements,
   selectedElement,
   onElementSelect,
@@ -98,6 +96,7 @@ function TShirtModel({
   brushColor: string;
   brushSize: number;
   onModelClick: (point: THREE.Vector3, uv: THREE.Vector2) => void;
+  onMoveElement?: (uv: THREE.Vector2) => void;
   designElements: DesignElement[];
   selectedElement: string | null;
   onElementSelect: (id: string | null) => void;
@@ -113,7 +112,6 @@ function TShirtModel({
   const [lastPaintPosition, setLastPaintPosition] =
     useState<THREE.Vector2 | null>(null);
 
-  // Load T-shirt model
   let gltf;
   try {
     gltf = useGLTF("/tshirt/source/Tshirt.glb");
@@ -121,7 +119,6 @@ function TShirtModel({
     console.warn("T-shirt model not found, using fallback");
   }
 
-  // Handle model rotation based on active view (only if not locked)
   useFrame(() => {
     if (meshRef.current && !isRotationLocked) {
       const targetRotation = activeView === "front" ? 0 : Math.PI;
@@ -133,7 +130,6 @@ function TShirtModel({
     }
   });
 
-  // Improved mouse interaction handlers with simplified UV mapping
   const handlePointerDown = useCallback(
     (event: any) => {
       event.stopPropagation();
@@ -161,14 +157,25 @@ function TShirtModel({
           const uv = intersection.uv;
 
           if (uv) {
-            // Simple UV mapping - use coordinates directly as they come from the model
-            onModelClick(point, uv);
+            if (activeTool === "move" && typeof onMoveElement === "function") {
+              onMoveElement(uv);
+            } else {
+              onModelClick(point, uv);
+            }
             setLastPaintPosition(uv);
           }
         }
       }
     },
-    [activeTool, raycaster, camera, pointer, onModelClick, onDrawingChange]
+    [
+      activeTool,
+      raycaster,
+      camera,
+      pointer,
+      onModelClick,
+      onDrawingChange,
+      onMoveElement,
+    ]
   );
 
   const handlePointerMove = useCallback(
@@ -189,7 +196,6 @@ function TShirtModel({
           const uv = intersection.uv;
 
           if (uv) {
-            // Simple direct UV usage
             onModelClick(intersection.point, uv);
             setLastPaintPosition(uv);
           }
@@ -206,70 +212,60 @@ function TShirtModel({
     }
   }, [isDrawing, onDrawingChange]);
 
-  // Render design elements as 3D overlays (only text and logos now)
   const renderDesignElements = () => {
     return designElements
       .filter((element) => element.visible && element.side === activeView)
       .map((element) => {
-        // Convert UV coordinates to 3D position on the T-shirt surface
-        const x = (element.position.x - 0.5) * 2;
-        const y = (element.position.y - 0.5) * 2;
-        const z = activeView === "front" ? 0.1 : -0.1;
+        const uvX = element.position.x;
+        const uvY = element.position.y;
+
+        let x, y, z;
+
+        if (activeView === "front") {
+          x = (uvX - 0.5) * 1.8;
+          y = (0.5 - uvY) * 2.2 + 0.2;
+          z = 0.06;
+        } else {
+          x = (0.5 - uvX) * 1.8;
+          y = (0.5 - uvY) * 2.2 + 0.2;
+          z = -0.06;
+        }
 
         const position = new THREE.Vector3(x, y, z);
 
         switch (element.type) {
           case "text":
             return (
-              <Text
-                key={element.id}
-                position={position}
-                fontSize={element.data.size || 0.15}
-                color={element.data.color || "#000000"}
-                anchorX="center"
-                anchorY="middle"
-                onClick={() => onElementSelect(element.id)}
-                maxWidth={1}
-              >
-                {element.data.text || "Text"}
-              </Text>
+              <group key={element.id}>
+                <Text
+                  position={position}
+                  fontSize={element.data.size || 0.15}
+                  color={element.data.color || "#000000"}
+                  anchorX="center"
+                  anchorY="middle"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onElementSelect(element.id);
+                  }}
+                  maxWidth={1}
+                >
+                  {element.data.text || "Text"}
+                </Text>
+                {selectedElement === element.id && (
+                  <mesh position={position}>
+                    <planeGeometry args={[0.3, 0.1]} />
+                    <meshBasicMaterial
+                      color="#ffff00"
+                      transparent
+                      opacity={0.3}
+                    />
+                  </mesh>
+                )}
+              </group>
             );
 
           case "logo":
-            return (
-              <mesh
-                key={element.id}
-                position={position}
-                onClick={() => onElementSelect(element.id)}
-              >
-                <planeGeometry
-                  args={[element.data.size || 0.15, element.data.size || 0.15]}
-                />
-                <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
-                <Text
-                  position={[0, 0, 0.01]}
-                  fontSize={0.03}
-                  color="#000000"
-                  anchorX="center"
-                  anchorY="middle"
-                >
-                  {element.data.name || "LOGO"}
-                </Text>
-                {selectedElement === element.id && (
-                  <lineSegments>
-                    <edgesGeometry
-                      args={[
-                        new THREE.PlaneGeometry(
-                          element.data.size || 0.15,
-                          element.data.size || 0.15
-                        ),
-                      ]}
-                    />
-                    <lineBasicMaterial color="#ffff00" linewidth={3} />
-                  </lineSegments>
-                )}
-              </mesh>
-            );
+            return null; // Logos are now drawn directly on texture, not as 3D overlays
 
           default:
             return null;
@@ -277,11 +273,9 @@ function TShirtModel({
       });
   };
 
-  // Create T-shirt geometry if model doesn't load
   const fallbackGeometry = useMemo(() => {
     const shape = new THREE.Shape();
 
-    // T-shirt outline
     shape.moveTo(-1, 1.5);
     shape.lineTo(-1, 0.8);
     shape.lineTo(-1.5, 0.6);
@@ -307,16 +301,12 @@ function TShirtModel({
   }, []);
 
   if (gltf && gltf.scene) {
-    // Clone the scene and apply textures
     const tshirtScene = gltf.scene.clone();
 
-    // Apply texture to the T-shirt material
     tshirtScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (child.material) {
           const material = child.material.clone();
-
-          // Apply the appropriate texture based on the view
           const currentTexture =
             activeView === "front" ? frontTexture : backTexture;
 
@@ -347,7 +337,6 @@ function TShirtModel({
     );
   }
 
-  // Fallback T-shirt
   return (
     <group
       ref={meshRef}
@@ -368,7 +357,6 @@ function TShirtModel({
   );
 }
 
-// Logo component for required logos
 function LogoItem({
   logo,
   onAdd,
@@ -413,20 +401,16 @@ function LogoItem({
   );
 }
 
-// Main 3D T-Shirt Editor Component
 export default function TShirtEditor3D() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mousePosition = useMousePosition();
 
-  // Canvas refs for texture painting
   const frontCanvasRef = useRef<HTMLCanvasElement>(null);
   const backCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Texture states
   const [frontTexture, setFrontTexture] = useState<THREE.Texture | null>(null);
   const [backTexture, setBackTexture] = useState<THREE.Texture | null>(null);
 
-  // State management
   const [activeTool, setActiveTool] = useState<string>("select");
   const [activeView, setActiveView] = useState<"front" | "back">("front");
   const [brushSize, setBrushSize] = useState(5);
@@ -436,13 +420,11 @@ export default function TShirtEditor3D() {
   const [textInput, setTextInput] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const [isRotationLocked, setIsRotationLocked] = useState(false);
+  const [placedLogos, setPlacedLogos] = useState<Set<string>>(new Set());
+  const [logoSize, setLogoSize] = useState(0.15);
 
-  // Initialize canvases and textures
   useEffect(() => {
-    // Create front canvas
     const frontCanvas = document.createElement("canvas");
     frontCanvas.width = 1024;
     frontCanvas.height = 1024;
@@ -458,7 +440,6 @@ export default function TShirtEditor3D() {
     frontTex.flipY = false;
     setFrontTexture(frontTex);
 
-    // Create back canvas
     const backCanvas = document.createElement("canvas");
     backCanvas.width = 1024;
     backCanvas.height = 1024;
@@ -475,7 +456,6 @@ export default function TShirtEditor3D() {
     setBackTexture(backTex);
   }, []);
 
-  // Available tools
   const tools: Tool[] = [
     { id: "select", name: "Select", icon: MousePointer, category: "selection" },
     { id: "move", name: "Move", icon: Move, category: "selection" },
@@ -488,7 +468,6 @@ export default function TShirtEditor3D() {
     { id: "text", name: "Text", icon: Type, category: "text" },
   ];
 
-  // Required logos for PSG kit
   const requiredLogos = [
     { id: "psg-logo", name: "PSG Logo", required: true, category: "team" },
     { id: "nike-logo", name: "Nike", required: true, category: "sponsor" },
@@ -500,7 +479,6 @@ export default function TShirtEditor3D() {
     },
   ];
 
-  // Color palette
   const colorPalette = [
     "#000000",
     "#ffffff",
@@ -520,7 +498,6 @@ export default function TShirtEditor3D() {
     "#808080",
   ];
 
-  // Paint on texture with simplified and accurate UV mapping
   const paintOnTexture = useCallback(
     (uv: THREE.Vector2) => {
       const canvas =
@@ -532,11 +509,9 @@ export default function TShirtEditor3D() {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Simple direct UV mapping - no complex transformations
       const x = uv.x * canvas.width;
       const y = uv.y * canvas.height;
 
-      // Clamp coordinates to canvas bounds
       const clampedX = Math.max(0, Math.min(canvas.width - 1, x));
       const clampedY = Math.max(0, Math.min(canvas.height - 1, y));
 
@@ -552,7 +527,6 @@ export default function TShirtEditor3D() {
         ctx.arc(clampedX, clampedY, brushSize * 2, 0, Math.PI * 2);
         ctx.fill();
       } else if (activeTool === "fill") {
-        // Flood fill implementation
         floodFill(ctx, Math.floor(clampedX), Math.floor(clampedY), brushColor);
       }
 
@@ -561,7 +535,6 @@ export default function TShirtEditor3D() {
     [activeView, activeTool, brushColor, brushSize, frontTexture, backTexture]
   );
 
-  // Flood fill algorithm for fill tool
   const floodFill = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -579,21 +552,18 @@ export default function TShirtEditor3D() {
       const width = ctx.canvas.width;
       const height = ctx.canvas.height;
 
-      // Convert fill color to RGB
       const tempCanvas = document.createElement("canvas");
       const tempCtx = tempCanvas.getContext("2d")!;
       tempCtx.fillStyle = fillColor;
       tempCtx.fillRect(0, 0, 1, 1);
       const fillColorData = tempCtx.getImageData(0, 0, 1, 1).data;
 
-      // Get target color at start position
       const startPos = (startY * width + startX) * 4;
       const targetR = data[startPos];
       const targetG = data[startPos + 1];
       const targetB = data[startPos + 2];
       const targetA = data[startPos + 3];
 
-      // If target color is same as fill color, return
       if (
         targetR === fillColorData[0] &&
         targetG === fillColorData[1] &&
@@ -603,7 +573,6 @@ export default function TShirtEditor3D() {
         return;
       }
 
-      // Stack for flood fill
       const stack = [[startX, startY]];
       const visited = new Set<string>();
 
@@ -618,7 +587,6 @@ export default function TShirtEditor3D() {
 
         const pos = (y * width + x) * 4;
 
-        // Check if current pixel matches target color
         if (
           data[pos] !== targetR ||
           data[pos + 1] !== targetG ||
@@ -628,13 +596,11 @@ export default function TShirtEditor3D() {
           continue;
         }
 
-        // Fill current pixel
         data[pos] = fillColorData[0];
         data[pos + 1] = fillColorData[1];
         data[pos + 2] = fillColorData[2];
         data[pos + 3] = fillColorData[3];
 
-        // Add neighboring pixels to stack
         stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
       }
 
@@ -643,7 +609,6 @@ export default function TShirtEditor3D() {
     []
   );
 
-  // Draw shape on texture
   const drawShapeOnTexture = useCallback(
     (uv: THREE.Vector2, shapeType: string, size: number, color: string) => {
       const canvas =
@@ -657,7 +622,7 @@ export default function TShirtEditor3D() {
 
       const x = uv.x * canvas.width;
       const y = uv.y * canvas.height;
-      const shapeSize = size * 100; // Scale size appropriately
+      const shapeSize = size * 100;
 
       ctx.fillStyle = color;
       ctx.strokeStyle = color;
@@ -694,7 +659,100 @@ export default function TShirtEditor3D() {
     [activeView, frontTexture, backTexture]
   );
 
-  // Handle model clicks
+  const drawLogoOnTexture = useCallback(
+    (uv: THREE.Vector2, logoId: string, size: number = 0.2) => {
+      const canvas =
+        activeView === "front" ? frontCanvasRef.current : backCanvasRef.current;
+      const texture = activeView === "front" ? frontTexture : backTexture;
+
+      if (!canvas || !texture) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Map logo IDs to their respective file paths
+      const logoMap: { [key: string]: string } = {
+        "psg-logo": "/logos/psg2.png",
+        "nike-logo": "/logos/nike.png",
+        "qatar-airways": "/logos/qatar-airways.png",
+      };
+
+      const logoPath = logoMap[logoId];
+      if (!logoPath) {
+        console.warn(`Logo path not found for: ${logoId}`);
+        return;
+      }
+
+      // Load and draw the image
+      const img = new Image();
+      img.onload = () => {
+        const x = uv.x * canvas.width;
+        // Fix vertical flip by inverting y coordinate
+        const y = (1 - uv.y) * canvas.height;
+        const logoSize = size * canvas.width; // Scale relative to canvas
+
+        // Save current context state
+        ctx.save();
+
+        // For back view, flip horizontally to match the model orientation
+        if (activeView === "back") {
+          ctx.scale(-1, 1);
+          ctx.translate(-canvas.width, 0);
+        }
+
+        // Draw the logo centered at the click position
+        ctx.drawImage(
+          img,
+          x - logoSize / 2,
+          y - logoSize / 2,
+          logoSize,
+          logoSize
+        );
+
+        // Restore context state
+        ctx.restore();
+
+        texture.needsUpdate = true;
+
+        // Track that this logo has been placed
+        setPlacedLogos((prev) => new Set(prev).add(logoId));
+      };
+
+      img.onerror = () => {
+        console.warn(`Failed to load logo: ${logoPath}`);
+        // Draw a fallback rectangle
+        const x = uv.x * canvas.width;
+        const y = (1 - uv.y) * canvas.height;
+        const logoSize = size * canvas.width;
+
+        ctx.save();
+        if (activeView === "back") {
+          ctx.scale(-1, 1);
+          ctx.translate(-canvas.width, 0);
+        }
+
+        ctx.fillStyle = "#cccccc";
+        ctx.fillRect(x - logoSize / 2, y - logoSize / 2, logoSize, logoSize);
+
+        // Add text fallback
+        ctx.fillStyle = "#000000";
+        ctx.font = `${logoSize / 8}px Arial`;
+        ctx.textAlign = "center";
+        ctx.fillText(logoId.toUpperCase(), x, y);
+
+        ctx.restore();
+
+        texture.needsUpdate = true;
+
+        // Track that this logo has been placed (even as fallback)
+        setPlacedLogos((prev) => new Set(prev).add(logoId));
+      };
+
+      img.src = logoPath;
+    },
+    [activeView, frontTexture, backTexture, setPlacedLogos]
+  );
+
   const handleModelClick = useCallback(
     (point: THREE.Vector3, uv: THREE.Vector2) => {
       if (
@@ -708,13 +766,18 @@ export default function TShirtEditor3D() {
 
       if (activeTool === "select" || activeTool === "move") return;
 
-      // Handle shapes - draw directly on texture instead of 3D overlays
       if (["circle", "square", "triangle"].includes(activeTool)) {
         drawShapeOnTexture(uv, activeTool, 0.15, brushColor);
         return;
       }
 
-      // Handle text and logos as 3D overlays
+      // Handle logo placement on texture
+      if (activeTool.includes("logo")) {
+        const logoId = activeTool; // activeTool will be the logo ID
+        drawLogoOnTexture(uv, logoId, logoSize);
+        return;
+      }
+
       const newElement: DesignElement = {
         id: `element-${Date.now()}`,
         type: activeTool as any,
@@ -739,36 +802,42 @@ export default function TShirtEditor3D() {
       setDesignElements((prev) => [...prev, newElement]);
       setSelectedElement(newElement.id);
     },
-    [activeTool, brushColor, activeView, paintOnTexture, drawShapeOnTexture]
+    [
+      activeTool,
+      brushColor,
+      activeView,
+      paintOnTexture,
+      drawShapeOnTexture,
+      drawLogoOnTexture,
+    ]
   );
 
-  // Handle tool selection
+  const moveSelectedElement = useCallback(
+    (newUV: THREE.Vector2) => {
+      if (!selectedElement || activeTool !== "move") return;
+
+      setDesignElements((prev) =>
+        prev.map((el) =>
+          el.id === selectedElement
+            ? { ...el, position: { x: newUV.x, y: newUV.y } }
+            : el
+        )
+      );
+    },
+    [selectedElement, activeTool]
+  );
+
   const handleToolSelect = (toolId: string) => {
     setActiveTool(toolId);
     setSelectedElement(null);
   };
 
-  // Add logo to design
   const addLogoToDesign = (logo: any) => {
-    const newElement: DesignElement = {
-      id: `logo-${logo.id}-${Date.now()}`,
-      type: "logo",
-      position: { x: 0.5, y: 0.3 },
-      data: {
-        logoId: logo.id,
-        name: logo.name,
-        size: 0.2,
-      },
-      visible: true,
-      locked: false,
-      side: activeView,
-    };
-
-    setDesignElements((prev) => [...prev, newElement]);
-    setSelectedElement(newElement.id);
+    // Set the active tool to the logo ID, so when user clicks on the T-shirt, it will place the logo
+    setActiveTool(logo.id);
+    setSelectedElement(null);
   };
 
-  // Handle text input
   const handleTextSubmit = () => {
     if (textInput.trim() && designElements.length > 0) {
       const lastElement = designElements[designElements.length - 1];
@@ -786,7 +855,6 @@ export default function TShirtEditor3D() {
     setShowTextInput(false);
   };
 
-  // Delete selected element
   const deleteSelectedElement = () => {
     if (selectedElement) {
       setDesignElements((prev) =>
@@ -796,7 +864,6 @@ export default function TShirtEditor3D() {
     }
   };
 
-  // Toggle element visibility
   const toggleElementVisibility = (elementId: string) => {
     setDesignElements((prev) =>
       prev.map((el) =>
@@ -805,12 +872,11 @@ export default function TShirtEditor3D() {
     );
   };
 
-  // Clear all
   const clearAll = () => {
     setDesignElements([]);
     setSelectedElement(null);
+    setPlacedLogos(new Set()); // Clear placed logos tracking
 
-    // Clear canvases
     if (frontCanvasRef.current) {
       const ctx = frontCanvasRef.current.getContext("2d");
       if (ctx) {
@@ -840,35 +906,6 @@ export default function TShirtEditor3D() {
     }
   };
 
-  // Handle file upload
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string;
-
-        const newElement: DesignElement = {
-          id: `image-${Date.now()}`,
-          type: "image",
-          position: { x: 0.5, y: 0.5 },
-          data: {
-            url: imageUrl,
-            size: 0.3,
-          },
-          visible: true,
-          locked: false,
-          side: activeView,
-        };
-
-        setDesignElements((prev) => [...prev, newElement]);
-        setSelectedElement(newElement.id);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Save design
   const handleSave = () => {
     const designData = {
       elements: designElements,
@@ -883,7 +920,6 @@ export default function TShirtEditor3D() {
     alert("Design saved successfully!");
   };
 
-  // Export design
   const handleExport = () => {
     const designData = {
       elements: designElements,
@@ -908,22 +944,17 @@ export default function TShirtEditor3D() {
     URL.revokeObjectURL(url);
   };
 
-  // Check if all required logos are placed
   const allLogosPlaced = useMemo(() => {
-    const placedLogos = designElements
-      .filter((el) => el.type === "logo")
-      .map((el) => el.data.logoId);
-    return requiredLogos.every((logo) => placedLogos.includes(logo.id));
-  }, [designElements, requiredLogos]);
+    return requiredLogos.every((logo) => placedLogos.has(logo.id));
+  }, [placedLogos, requiredLogos]);
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
-      <div className="relative z-10 min-h-screen p-4">
-        <div className="max-w-[1800px] mx-auto">
-          {/* Header */}
-          <div className="mb-6">
+      <div className="relative z-10 h-screen flex flex-col">
+        <div className="max-w-[1800px] mx-auto w-full flex-1 flex flex-col px-4 py-4">
+          <div className="mb-4 flex-shrink-0">
             <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-              <div className="bg-black text-white p-4">
+              <div className="bg-black text-white p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <button className="bg-white text-black border-2 border-black p-2 hover:bg-gray-100 transition-all duration-200 hover:scale-105">
@@ -934,9 +965,6 @@ export default function TShirtEditor3D() {
                         3D FANVAS
                       </span>
                     </div>
-                    <span className="text-gray-400 font-mono text-sm">
-                      / CLUB ROOMS / PSG / KIT DESIGN / 3D EDITOR
-                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -971,17 +999,17 @@ export default function TShirtEditor3D() {
                 </div>
               </div>
 
-              <div className="bg-black text-white px-6 py-4">
+              <div className="bg-black text-white px-6 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white border-2 border-black p-2 flex items-center justify-center">
-                      <PenTool className="w-6 h-6 text-black" />
+                    <div className="w-10 h-10 bg-white border-2 border-black p-2 flex items-center justify-center">
+                      <PenTool className="w-5 h-5 text-black" />
                     </div>
                     <div>
-                      <h1 className="text-2xl font-black">
+                      <h1 className="text-xl font-black">
                         3D PSG KIT DESIGNER
                       </h1>
-                      <p className="text-sm font-mono opacity-80">
+                      <p className="text-xs font-mono opacity-80">
                         PAINT DIRECTLY ON THE 3D MODEL
                       </p>
                     </div>
@@ -1004,21 +1032,21 @@ export default function TShirtEditor3D() {
             </div>
           </div>
 
-          {/* Main Editor Interface */}
-          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)]">
-            {/* Left Toolbar */}
-            <div className="col-span-2">
-              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] h-full">
-                <div className="bg-black text-white p-4">
-                  <h2 className="text-lg font-black">TOOLS</h2>
+          <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
+            <div className="col-span-2 flex flex-col min-h-0">
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col min-h-0">
+                <div className="bg-black text-white p-3 flex-shrink-0">
+                  <h2 className="text-base font-black">TOOLS</h2>
                 </div>
-                <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-60px)]">
-                  {/* Drawing Tools */}
+                <div
+                  className="p-3 space-y-3 overflow-y-auto flex-1 min-h-0"
+                  style={{ maxHeight: "calc(100vh - 300px)" }}
+                >
                   <div>
-                    <h3 className="font-black text-sm mb-2 text-gray-700">
+                    <h3 className="font-black text-xs mb-2 text-gray-700">
                       DRAWING
                     </h3>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       {tools
                         .filter(
                           (t) =>
@@ -1028,7 +1056,7 @@ export default function TShirtEditor3D() {
                         .map((tool) => (
                           <button
                             key={tool.id}
-                            className={`border-2 border-black p-2 transition-all duration-200 hover:scale-105 ${
+                            className={`border-2 border-black p-2 transition-all duration-200 hover:scale-105 flex items-center gap-2 text-left ${
                               activeTool === tool.id
                                 ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                 : "bg-white text-black hover:bg-gray-100"
@@ -1036,24 +1064,26 @@ export default function TShirtEditor3D() {
                             onClick={() => handleToolSelect(tool.id)}
                             title={tool.name}
                           >
-                            <tool.icon className="w-4 h-4" />
+                            <tool.icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="text-xs font-bold">
+                              {tool.name}
+                            </span>
                           </button>
                         ))}
                     </div>
                   </div>
 
-                  {/* Shape Tools */}
                   <div>
-                    <h3 className="font-black text-sm mb-2 text-gray-700">
+                    <h3 className="font-black text-xs mb-2 text-gray-700">
                       SHAPES
                     </h3>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       {tools
                         .filter((t) => t.category === "shapes")
                         .map((tool) => (
                           <button
                             key={tool.id}
-                            className={`border-2 border-black p-2 transition-all duration-200 hover:scale-105 ${
+                            className={`border-2 border-black p-2 transition-all duration-200 hover:scale-105 flex items-center gap-2 text-left ${
                               activeTool === tool.id
                                 ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                 : "bg-white text-black hover:bg-gray-100"
@@ -1061,55 +1091,35 @@ export default function TShirtEditor3D() {
                             onClick={() => handleToolSelect(tool.id)}
                             title={tool.name}
                           >
-                            <tool.icon className="w-4 h-4" />
+                            <tool.icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="text-xs font-bold">
+                              {tool.name}
+                            </span>
                           </button>
                         ))}
                     </div>
                   </div>
 
-                  {/* Text Tool */}
                   <div>
-                    <h3 className="font-black text-sm mb-2 text-gray-700">
+                    <h3 className="font-black text-xs mb-2 text-gray-700">
                       TEXT
                     </h3>
                     <button
-                      className={`w-full border-2 border-black p-2 transition-all duration-200 hover:scale-105 ${
+                      className={`w-full border-2 border-black p-2 transition-all duration-200 hover:scale-105 flex items-center gap-2 text-left ${
                         activeTool === "text"
                           ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                           : "bg-white text-black hover:bg-gray-100"
                       }`}
                       onClick={() => handleToolSelect("text")}
                     >
-                      <Type className="w-4 h-4 mr-2 inline" />
-                      Add Text
+                      <Type className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-xs font-bold">Add Text</span>
                     </button>
                   </div>
 
-                  {/* Image Upload */}
-                  <div>
-                    <h3 className="font-black text-sm mb-2 text-gray-700">
-                      IMAGES
-                    </h3>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full border-2 border-black p-2 bg-white hover:bg-gray-100 transition-all duration-200 hover:scale-105"
-                    >
-                      <ImageIcon className="w-4 h-4 mr-2 inline" />
-                      Upload Image
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </div>
-
-                  {/* Brush Settings */}
                   {(activeTool === "brush" || activeTool === "eraser") && (
                     <div>
-                      <h3 className="font-black text-sm mb-2 text-gray-700">
+                      <h3 className="font-black text-xs mb-2 text-gray-700">
                         BRUSH SIZE
                       </h3>
                       <input
@@ -1120,19 +1130,38 @@ export default function TShirtEditor3D() {
                         onChange={(e) => setBrushSize(Number(e.target.value))}
                         className="w-full"
                       />
-                      <div className="text-center text-sm font-bold mt-1">
+                      <div className="text-center text-xs font-bold mt-1">
                         {brushSize}px
                       </div>
                     </div>
                   )}
 
-                  {/* Color Picker */}
+                  {activeTool.includes("logo") && (
+                    <div>
+                      <h3 className="font-black text-xs mb-2 text-gray-700">
+                        LOGO SIZE
+                      </h3>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.5"
+                        step="0.01"
+                        value={logoSize}
+                        onChange={(e) => setLogoSize(Number(e.target.value))}
+                        className="w-full"
+                      />
+                      <div className="text-center text-xs font-bold mt-1">
+                        {Math.round(logoSize * 100)}%
+                      </div>
+                    </div>
+                  )}
+
                   {(activeTool === "brush" ||
                     activeTool === "fill" ||
                     activeTool === "text" ||
                     ["circle", "square", "triangle"].includes(activeTool)) && (
                     <div>
-                      <h3 className="font-black text-sm mb-2 text-gray-700">
+                      <h3 className="font-black text-xs mb-2 text-gray-700">
                         COLOR
                       </h3>
                       <input
@@ -1161,12 +1190,11 @@ export default function TShirtEditor3D() {
               </div>
             </div>
 
-            {/* Main 3D Canvas */}
-            <div className="col-span-8">
-              <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] h-full">
-                <div className="bg-black text-white p-4">
+            <div className="col-span-8 flex flex-col min-h-0">
+              <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col min-h-0">
+                <div className="bg-black text-white p-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-black">3D DESIGN CANVAS</h2>
+                    <h2 className="text-base font-black">3D DESIGN CANVAS</h2>
                     <div className="flex items-center gap-2">
                       <button
                         className={`border-2 border-white px-3 py-1 font-black text-sm ${
@@ -1192,13 +1220,17 @@ export default function TShirtEditor3D() {
                   </div>
                 </div>
 
-                <div className="h-[calc(100%-80px)] bg-gray-400 relative">
+                <div className="flex-1 bg-gray-400 relative min-h-0">
                   <Canvas
                     camera={{ position: [0, 0, 5], fov: 50 }}
-                    style={{ background: "#9ca3af" }}
+                    style={{
+                      background: "#9ca3af",
+                      width: "100%",
+                      height: "100%",
+                    }}
                   >
-                    <ambientLight intensity={0.6} />
-                    <directionalLight position={[10, 10, 5]} intensity={1} />
+                    <ambientLight intensity={0.2} />
+                    <directionalLight position={[10, 10, 5]} intensity={0.5} />
                     <spotLight position={[-10, -10, -5]} intensity={0.5} />
 
                     <TShirtModel
@@ -1207,6 +1239,7 @@ export default function TShirtEditor3D() {
                       brushColor={brushColor}
                       brushSize={brushSize}
                       onModelClick={handleModelClick}
+                      onMoveElement={moveSelectedElement}
                       designElements={designElements}
                       selectedElement={selectedElement}
                       onElementSelect={setSelectedElement}
@@ -1230,31 +1263,28 @@ export default function TShirtEditor3D() {
                     <Environment preset="studio" />
                   </Canvas>
 
-                  {/* Instructions Overlay */}
-                  <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded border-2 border-white">
-                    <h3 className="font-black text-sm mb-2">INSTRUCTIONS:</h3>
+                  <div className="absolute top-3 left-3 bg-black bg-opacity-90 text-white p-3 rounded border-2 border-white max-w-xs">
+                    <h3 className="font-black text-sm mb-2">QUICK GUIDE:</h3>
                     <ul className="text-xs space-y-1">
                       <li>
-                        • <strong>Brush:</strong> Paint freehand on texture
+                        • <strong>Brush:</strong> Paint on texture
                       </li>
                       <li>
-                        • <strong>Fill:</strong> Click to flood fill areas
+                        • <strong>Fill:</strong> Flood fill areas
                       </li>
                       <li>
-                        • <strong>Shapes:</strong> Draw directly on texture
+                        • <strong>Shapes:</strong> Draw on texture
                       </li>
                       <li>
-                        • <strong>Text:</strong> Add 3D text overlays
+                        • <strong>Text:</strong> 3D text overlays
                       </li>
                       <li>
-                        • <strong>Lock:</strong> Disable rotation for precision
+                        • <strong>Lock:</strong> Disable rotation
                       </li>
-                      <li>• Switch between front/back views</li>
                     </ul>
                   </div>
 
-                  {/* Model Controls */}
-                  <div className="absolute top-4 right-4 flex flex-col gap-2">
+                  <div className="absolute top-3 right-3 flex flex-col gap-2">
                     <button
                       onClick={() => setIsRotationLocked(!isRotationLocked)}
                       className={`px-3 py-2 border-2 border-black font-black text-sm transition-all duration-200 hover:scale-105 ${
@@ -1267,35 +1297,54 @@ export default function TShirtEditor3D() {
                     </button>
                   </div>
 
-                  {/* Active Tool Indicator */}
-                  <div className="absolute bottom-4 left-4 bg-yellow-400 text-black p-2 border-2 border-black font-black text-sm">
-                    Active Tool:{" "}
+                  <div className="absolute bottom-3 left-3 bg-yellow-400 text-black p-2 border-2 border-black font-black text-sm">
+                    <span className="hidden sm:inline">Active Tool: </span>
                     {tools.find((t) => t.id === activeTool)?.name ||
-                      activeTool.toUpperCase()}
+                      (activeTool.includes("logo")
+                        ? `${
+                            requiredLogos.find((l) => l.id === activeTool)
+                              ?.name || activeTool.toUpperCase()
+                          } (Click to Place)`
+                        : activeTool.toUpperCase())}
                   </div>
 
-                  {/* Side Indicator */}
-                  <div className="absolute bottom-4 right-4 bg-blue-500 text-white p-2 border-2 border-black font-black text-sm">
-                    Current Side: {activeView.toUpperCase()}
+                  <div className="absolute bottom-3 right-3 bg-blue-500 text-white p-2 border-2 border-black font-black text-sm">
+                    <span className="hidden sm:inline">Side: </span>
+                    {activeView.toUpperCase()}
                   </div>
 
-                  {/* Fill Tool Indicator */}
+                  {activeTool === "move" && selectedElement && (
+                    <div className="absolute bottom-28 left-3 bg-orange-500 text-white p-2 border-2 border-black font-black text-xs max-w-xs">
+                      Click on T-shirt surface to move selected element
+                    </div>
+                  )}
+
                   {activeTool === "fill" && (
-                    <div className="absolute bottom-16 left-4 bg-purple-500 text-white p-2 border-2 border-black font-black text-xs">
+                    <div className="absolute bottom-14 left-3 bg-purple-500 text-white p-2 border-2 border-black font-black text-xs">
                       Click on T-shirt to fill with color
+                    </div>
+                  )}
+
+                  {activeTool.includes("logo") && (
+                    <div className="absolute bottom-14 left-3 bg-green-500 text-white p-2 border-2 border-black font-black text-xs max-w-xs">
+                      Click on T-shirt to place{" "}
+                      {requiredLogos.find((l) => l.id === activeTool)?.name ||
+                        "logo"}
+                      <br />
+                      <span className="text-yellow-200">
+                        Size: {Math.round(logoSize * 100)}%
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Right Panel */}
-            <div className="col-span-2 space-y-6">
-              {/* Design Elements Panel */}
-              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <div className="bg-black text-white p-4">
+            <div className="col-span-2 flex flex-col space-y-4 min-h-0">
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col min-h-0 flex-1">
+                <div className="bg-black text-white p-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-black">ELEMENTS</h2>
+                    <h2 className="text-base font-black">ELEMENTS</h2>
                     <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded font-bold">
                       {
                         designElements.filter((el) => el.side === activeView)
@@ -1304,7 +1353,10 @@ export default function TShirtEditor3D() {
                     </span>
                   </div>
                 </div>
-                <div className="p-4 space-y-2 max-h-48 overflow-y-auto">
+                <div
+                  className="p-3 space-y-2 overflow-y-auto flex-1 min-h-0"
+                  style={{ maxHeight: "calc(100vh - 400px)" }}
+                >
                   {designElements
                     .filter((el) => el.side === activeView)
                     .map((element) => (
@@ -1318,7 +1370,7 @@ export default function TShirtEditor3D() {
                         onClick={() => setSelectedElement(element.id)}
                       >
                         <button
-                          className="p-1 border border-black bg-white hover:bg-gray-100"
+                          className="p-1 border border-black bg-white hover:bg-gray-100 flex-shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleElementVisibility(element.id);
@@ -1330,45 +1382,57 @@ export default function TShirtEditor3D() {
                             <EyeOff className="w-3 h-3" />
                           )}
                         </button>
-                        <span className="text-xs font-bold flex-1">
+                        <span className="text-xs font-bold flex-1 truncate">
                           {element.type.toUpperCase()}{" "}
                           {element.data.text ||
                             element.data.name ||
                             element.id.slice(-4)}
                         </span>
+                        {selectedElement === element.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTool("move");
+                            }}
+                            className="p-1 border border-black bg-blue-500 text-white hover:bg-blue-600 flex-shrink-0"
+                            title="Move Element"
+                          >
+                            <Move className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   {designElements.filter((el) => el.side === activeView)
                     .length === 0 && (
-                    <div className="text-center text-gray-500 text-sm py-4">
+                    <div className="text-center text-gray-500 text-xs py-4">
                       No elements on {activeView} side yet. Click on the model
                       to add some!
                     </div>
                   )}
                 </div>
                 {selectedElement && (
-                  <div className="p-4 border-t-2 border-black">
+                  <div className="p-3 border-t-2 border-black flex-shrink-0">
                     <button
                       onClick={deleteSelectedElement}
-                      className="w-full bg-red-500 hover:bg-red-600 text-white font-black border-2 border-black px-2 py-1 text-sm transition-all duration-200 hover:scale-105"
+                      className="w-full bg-red-500 hover:bg-red-600 text-white font-black border-2 border-black px-2 py-1 text-xs transition-all duration-200 hover:scale-105"
                     >
-                      <Trash2 className="w-4 h-4 mr-1 inline" />
+                      <Trash2 className="w-3 h-3 mr-1 inline" />
                       Delete Selected
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Required Logos */}
-              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <div className="bg-red-600 text-white p-4">
-                  <h2 className="text-lg font-black">REQUIRED LOGOS</h2>
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col min-h-0 flex-1">
+                <div className="bg-red-600 text-white p-3 flex-shrink-0">
+                  <h2 className="text-base font-black">REQUIRED LOGOS</h2>
                 </div>
-                <div className="p-4 space-y-3">
+                <div
+                  className="p-3 space-y-3 overflow-y-auto flex-1 min-h-0"
+                  style={{ maxHeight: "calc(100vh - 400px)" }}
+                >
                   {requiredLogos.map((logo) => {
-                    const isPlaced = designElements.some(
-                      (el) => el.type === "logo" && el.data.logoId === logo.id
-                    );
+                    const isPlaced = placedLogos.has(logo.id);
 
                     return (
                       <LogoItem
@@ -1393,76 +1457,36 @@ export default function TShirtEditor3D() {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <div className="bg-green-600 text-white p-4">
-                  <h2 className="text-lg font-black">ACTIONS</h2>
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-shrink-0">
+                <div className="bg-green-600 text-white p-3">
+                  <h2 className="text-base font-black">ACTIONS</h2>
                 </div>
-                <div className="p-4 space-y-3">
+                <div className="p-3 space-y-2">
                   <button
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105"
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105 text-xs"
                     onClick={handleSave}
                   >
-                    <Save className="w-4 h-4 mr-2 inline" />
+                    <Save className="w-3 h-3 mr-1 inline" />
                     Save Draft
                   </button>
                   <button
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105"
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105 text-xs"
                     onClick={handleExport}
                   >
-                    <Download className="w-4 h-4 mr-2 inline" />
+                    <Download className="w-3 h-3 mr-1 inline" />
                     Export Design
                   </button>
                   <button
-                    className={`w-full font-black border-2 border-black p-2 transition-all duration-200 ${
+                    className={`w-full font-black border-2 border-black p-2 transition-all duration-200 text-xs ${
                       allLogosPlaced
                         ? "bg-purple-500 hover:bg-purple-600 text-white hover:scale-105"
                         : "bg-gray-400 text-gray-700 cursor-not-allowed"
                     }`}
                     disabled={!allLogosPlaced}
                   >
-                    <Trophy className="w-4 h-4 mr-2 inline" />
+                    <Trophy className="w-3 h-3 mr-1 inline" />
                     Submit Entry
                   </button>
-                </div>
-              </div>
-
-              {/* Stats Panel */}
-              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <div className="bg-gray-800 text-white p-4">
-                  <h2 className="text-lg font-black">STATS</h2>
-                </div>
-                <div className="p-4 space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-bold">Total Elements:</span>
-                    <span>{designElements.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-bold">Front Elements:</span>
-                    <span>
-                      {
-                        designElements.filter((el) => el.side === "front")
-                          .length
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-bold">Back Elements:</span>
-                    <span>
-                      {designElements.filter((el) => el.side === "back").length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-bold">Logos Placed:</span>
-                    <span>
-                      {designElements.filter((el) => el.type === "logo").length}
-                      /{requiredLogos.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-bold">Current Side:</span>
-                    <span className="uppercase font-bold">{activeView}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1470,7 +1494,6 @@ export default function TShirtEditor3D() {
         </div>
       </div>
 
-      {/* Text Input Modal */}
       {showTextInput && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6">
@@ -1512,7 +1535,6 @@ export default function TShirtEditor3D() {
         </div>
       )}
 
-      {/* Brush Preview Cursor */}
       {activeTool === "brush" && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-black rounded-full"
@@ -1530,7 +1552,6 @@ export default function TShirtEditor3D() {
         />
       )}
 
-      {/* Eraser Preview Cursor */}
       {activeTool === "eraser" && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-red-500 rounded-full bg-white"
@@ -1547,7 +1568,6 @@ export default function TShirtEditor3D() {
         />
       )}
 
-      {/* Fill Tool Cursor */}
       {activeTool === "fill" && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-purple-500 rounded"
@@ -1569,7 +1589,26 @@ export default function TShirtEditor3D() {
         </div>
       )}
 
-      {/* Drawing Indicator */}
+      {activeTool.includes("logo") && (
+        <div
+          className="fixed pointer-events-none z-50 border-2 border-green-500 rounded bg-green-100"
+          style={{
+            left: mousePosition.x,
+            top: mousePosition.y,
+            width: `${Math.max(logoSize * 100, 20)}px`,
+            height: `${Math.max(logoSize * 100, 20)}px`,
+            opacity: 0.8,
+            transform: "translate(-50%, -50%)",
+            display:
+              mousePosition.x === 0 && mousePosition.y === 0 ? "none" : "block",
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center text-green-800 text-xs font-bold">
+            📷
+          </div>
+        </div>
+      )}
+
       {isDrawing && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 border-2 border-black font-black text-sm z-50 animate-pulse">
           ✏️{" "}
