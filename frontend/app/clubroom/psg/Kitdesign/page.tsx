@@ -202,7 +202,7 @@ export default function KitDesignPage() {
 
   const handleCreateSubmission = () => {
     console.log("Create Submission button clicked");
-    alert("Create Submission modal would open here");
+    router.push("/clubroom/psg/Kitdesign/editor");
   };
 
   const handleSortChange = (sortType: "votes" | "recent" | "views") => {
