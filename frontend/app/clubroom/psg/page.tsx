@@ -106,7 +106,8 @@ export default function PSGClubRoom() {
       id: "1",
       title: "PSG Third Kit Design",
       description: "Design the next PSG third kit",
-      reward: "500 PSG Tokens + Official Kit",
+      reward: "Custom 1/1 NFT + Bragging Rights",
+
       deadline: "5 days",
       participants: 234,
       type: "Design",
@@ -116,7 +117,8 @@ export default function PSGClubRoom() {
       id: "2",
       title: "Parc des Princes Tifo",
       description: "Create a tifo for the next home match",
-      reward: "1,000 PSG Tokens + VIP Tickets",
+      reward: "Custom 1/1 NFT + Bragging Rights",
+
       deadline: "12 days",
       participants: 89,
       type: "Art",
@@ -124,9 +126,9 @@ export default function PSGClubRoom() {
     },
     {
       id: "3",
-      title: "Match Day Poster",
-      description: "Design poster for PSG vs Bayern",
-      reward: "200 PSG Tokens",
+      title: "Match Day Poster & Tickets",
+      description: "Design poster & Tickets",
+      reward: "Custom 1/1 NFT + Bragging Rights",
       deadline: "3 days",
       participants: 156,
       type: "Poster",
@@ -136,7 +138,8 @@ export default function PSGClubRoom() {
       id: "4",
       title: "Fan Footage Contest",
       description: "Best fan video from last match",
-      reward: "300 PSG Tokens",
+      reward: "Custom 1/1 NFT + Bragging Rights",
+
       deadline: "7 days",
       participants: 67,
       type: "Video",
@@ -184,7 +187,7 @@ export default function PSGClubRoom() {
       // Third Kit Design - Focus on the kit details
       cameraPosition: [-1.2, 1.8, 3.2] as [number, number, number],
       cameraTarget: [0, 1.2, 0] as [number, number, number],
-      cameraFOV: 45,
+      cameraFOV: 30,
       scale: 1.2,
       modelOffset: [0, 0, 0] as [number, number, number],
       ambientIntensity: 1.8,
@@ -436,7 +439,7 @@ export default function PSGClubRoom() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="mb-8"
           >
-            <Card className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+            <Card className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-0">
               <CardHeader className="bg-black text-white p-6">
                 <CardTitle className="text-2xl font-black tracking-wider flex items-center gap-3">
                   <Trophy className="w-6 h-6" />
@@ -612,7 +615,13 @@ export default function PSGClubRoom() {
                               </div>
                             </div>
 
-                            <Button className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
+                            <Button
+                              className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black"
+                              onClick={() =>
+                                contest.id === "1" &&
+                                router.push("/clubroom/psg/Kitdesign")
+                              }
+                            >
                               JOIN CONTEST
                               <ArrowRight className="w-4 h-4 ml-2" />
                             </Button>
