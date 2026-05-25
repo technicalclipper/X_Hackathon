@@ -687,44 +687,6 @@ export default function PSGClubRoom() {
             </motion.div>
 
             {/* Create Section */}
-            <motion.div
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-            >
-              <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 bg-black text-white flex items-center justify-center border-2 border-border">
-                      <PenTool className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black">CREATE YOUR ART</h3>
-                      <p className="text-sm text-gray-600 font-mono">
-                        UNLEASH YOUR CREATIVITY
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="bg-gray-100 p-3 border-2 border-black">
-                      <p className="text-sm font-black">DRAFTS: 2</p>
-                    </div>
-                    <div className="bg-gray-100 p-3 border-2 border-black">
-                      <p className="text-sm font-black">SUBMITTED: 5</p>
-                    </div>
-                    <div className="bg-yellow-400 p-3 border-2 border-black">
-                      <p className="text-sm font-black">WINNERS: 1 🏆</p>
-                    </div>
-                  </div>
-
-                  <Button className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
-                    <Upload className="w-4 h-4 mr-2" />
-                    START CREATING
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
           </div>
         </div>
       </div>
