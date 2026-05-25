@@ -16,7 +16,7 @@ contract FanEngagementPool is ERC721URIStorage, Ownable {
     enum PoolType { TIFO, MATCH_VIDEO, JERSEY, TICKETS }
 
     struct Pool {
-        uint256 idcreated global wallet 
+        uint256 id;
         PoolType poolType;
         string matchId;
         uint256 submissionDeadline;

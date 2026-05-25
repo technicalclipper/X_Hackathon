@@ -68,13 +68,20 @@ export const useEndAuction = () => {
         setWinnerAddress(eventWinner);
         setFinalAmount(eventAmount.toString());
 
-        // Update auction status in database
+        // Update auction status and NFT ownership in database
         try {
           await updateAuctionStatus({
             tokenId: eventTokenId,
             active: false,
             txHash: tx.hash
           });
+          
+          // Update NFT ownership to new owner
+          await updateNftOwnership({
+            tokenId: eventTokenId,
+            newOwner: eventWinner
+          });
+          
           setSuccess('Auction ended successfully!');
         } catch (dbError) {
           console.error('Database update failed:', dbError);
@@ -128,6 +135,36 @@ export const useEndAuction = () => {
       }
 
       console.log('Successfully updated auction status:', data);
+      return data;
+    } catch (err) {
+      console.error('Database error:', err);
+      throw err;
+    }
+  };
+
+  // Update NFT ownership in database
+  const updateNftOwnership = async (ownershipData: {
+    tokenId: number;
+    newOwner: string;
+  }) => {
+    try {
+      console.log('Updating NFT ownership in database:', ownershipData);
+
+      const { data, error } = await supabase
+        .from('nft_mints')
+        .update({
+          current_owner_address: ownershipData.newOwner
+        })
+        .eq('minted_token_id', ownershipData.tokenId.toString())
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error(`Failed to update NFT ownership: ${error.message}`);
+      }
+
+      console.log('Successfully updated NFT ownership:', data);
       return data;
     } catch (err) {
       console.error('Database error:', err);
