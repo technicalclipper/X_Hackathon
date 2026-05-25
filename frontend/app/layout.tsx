@@ -1,22 +1,13 @@
 import type { Metadata } from "next";
-import { Public_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import RetroGridBackground from "@/components/ui/RetroGridBackground";
+import { WalletProvider } from "@/components/WalletProvider";
 
-const geistSans = Public_Sans({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "FANVAS - Democratizing Fan Art",
-  description:
-    "The Google Doodle for sports clubs. Create, share, and celebrate fan art on the Chiliz network.",
+  title: "Fanvas - Democratizing Fan Art",
+  description: "Create, vote, and own official club visuals powered by Chiliz fan tokens",
 };
 
 export default function RootLayout({
@@ -26,9 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} antialiased`}>
-        <RetroGridBackground />
-        {children}
+      <body className={inter.className}>
+        <WalletProvider>
+          {children}
+        </WalletProvider>
       </body>
     </html>
   );

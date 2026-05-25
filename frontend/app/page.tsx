@@ -20,6 +20,7 @@ import {
   Shield,
 } from "lucide-react";
 import useCanvasCursor from "@/hooks/useCanvasCursor";
+import { WalletButton } from "@/components/WalletButton";
 
 export default function Home() {
   const router = useRouter();
@@ -110,63 +111,11 @@ export default function Home() {
   return (
     <div className="min-h-screen overflow-hidden p-4 md:p-8 relative">
       <canvas className="pointer-events-none fixed inset-0" id="canvas" />
-      {/* Football-themed Floating Elements */}
-      {/* <motion.div
-        className="absolute top-16 left-16 opacity-10 select-none"
-        style={{
-          x: useTransform(springX, (x) => x * 0.5),
-          y: useTransform(springY, (y) => y * 0.3),
-        }}
-      >
-        <Circle className="w-12 h-12" />
-      </motion.div>
-
-      <motion.div
-        className="absolute top-20 right-20 opacity-15 select-none"
-        style={{
-          x: useTransform(springX, (x) => x * -0.3),
-          y: useTransform(springY, (y) => y * 0.4),
-        }}
-      >
-        <Trophy className="w-8 h-8" />
-      </motion.div>
-
-      <motion.div
-        className="absolute bottom-20 left-20 opacity-10 select-none"
-        style={{
-          x: useTransform(springX, (x) => x * 0.4),
-          y: useTransform(springY, (y) => y * -0.2),
-        }}
-      >
-        <Shield className="w-10 h-10" />
-      </motion.div>
-
-      <motion.div
-        className="absolute bottom-16 right-16 opacity-15 select-none"
-        style={{
-          x: useTransform(springX, (x) => x * -0.2),
-          y: useTransform(springY, (y) => y * -0.3),
-        }}
-      >
-        <Flag className="w-8 h-8" />
-      </motion.div> */}
-
-      {/* Football Field Lines */}
-      {/* <motion.div
-        className="absolute top-1/3 left-8 w-12 h-2 bg-black border-2 border-black opacity-5"
-        style={{
-          x: useTransform(springX, (x) => x * 0.6),
-          y: useTransform(springY, (y) => y * 0.5),
-        }}
-      />
-
-      <motion.div
-        className="absolute bottom-1/3 right-8 w-2 h-12 bg-black border-2 border-black opacity-5"
-        style={{
-          x: useTransform(springX, (x) => x * -0.4),
-          y: useTransform(springY, (y) => y * -0.4),
-        }}
-      /> */}
+      
+      {/* Wallet Button - Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <WalletButton />
+      </div>
 
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Main Hero Section */}

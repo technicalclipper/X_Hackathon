@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { fanArtContractAddress, abi as fanArtABI } from '@/lib/fanArtContract';
 import supabase from '@/lib/supabaseConfig';
 import { usePinataUpload } from '@/hooks/ipfs/usePinataUpload';
+import { useWallet } from '@/components/WalletProvider';
 
 export interface SubmitToPoolParams {
   poolId: number;
@@ -11,19 +12,14 @@ export interface SubmitToPoolParams {
 }
 
 export const useSubmitToPool = () => {
-  // Contract state
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
-  const [userAddress, setUserAddress] = useState<string>('');
-  const [userPsgBalance, setUserPsgBalance] = useState<string>('');
+  // Use global wallet state
+  const { contract, userAddress, isConnected, psgBalance } = useWallet();
 
   // Form states
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
   const [poolDetails, setPoolDetails] = useState<any>(null);
 
   // Loading states
-  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -46,46 +42,6 @@ export const useSubmitToPool = () => {
     getGatewayUrl
   } = usePinataUpload();
 
-  // Initialize contract connection
-  const initializeContract = async () => {
-    try {
-      setIsInitializing(true);
-      setError('');
-      
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(fanArtContractAddress, fanArtABI, signer);
-      
-      setProvider(provider);
-      setSigner(signer);
-      setContract(contract);
-      
-      // Get user address
-      const address = await signer.getAddress();
-      setUserAddress(address);
-      
-      // Get PSG token balance
-      const psgToken = await contract.psgToken();
-      const psgContract = new ethers.Contract(psgToken, [
-        "function balanceOf(address owner) view returns (uint256)",
-        "function decimals() view returns (uint8)"
-      ], signer);
-      
-      const balance = await psgContract.balanceOf(address);
-      const decimals = await psgContract.decimals();
-      setUserPsgBalance(ethers.formatUnits(balance, decimals));
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize contract');
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
   // Get pool details
   const getPoolDetails = async (poolId: number) => {
     try {
@@ -107,16 +63,19 @@ export const useSubmitToPool = () => {
 
   // Submit to pool function
   const submitToPool = async () => {
-    if (!contract || !selectedPoolId || !uploadedCID) {
+    if (!contract || !isConnected) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    if (!selectedPoolId || !uploadedCID) {
       setError('Please select a pool and upload content first');
       return;
     }
 
-
-
     // Check if user has enough PSG tokens (10 tokens required)
     const requiredTokens = 10;
-    const userBalance = parseFloat(userPsgBalance);
+    const userBalance = parseFloat(psgBalance);
     if (userBalance < requiredTokens) {
       setError(`You need at least ${requiredTokens} PSG tokens to submit. Current balance: ${userBalance}`);
       return;
@@ -229,21 +188,6 @@ export const useSubmitToPool = () => {
     resetUpload();
   };
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      await initializeContract();
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
-  };
-
   // Handle pool selection
   const handlePoolSelect = async (poolId: number) => {
     setSelectedPoolId(poolId);
@@ -268,12 +212,10 @@ export const useSubmitToPool = () => {
   };
 
   return {
-    // Contract state
-    contract,
-    provider,
-    signer,
+    // Contract state from global wallet
     userAddress,
-    userPsgBalance,
+    isConnected,
+    userPsgBalance: psgBalance,
     
     // Form states
     selectedPoolId,
@@ -281,7 +223,6 @@ export const useSubmitToPool = () => {
     poolDetails,
     
     // Loading states
-    isInitializing,
     isSubmitting,
     error,
     success,
@@ -299,10 +240,8 @@ export const useSubmitToPool = () => {
     fileValidation,
     
     // Functions
-    initializeContract,
     submitToPool,
     resetForm,
-    connectWallet,
     handlePoolSelect,
     formatDate,
     getPoolStatus,

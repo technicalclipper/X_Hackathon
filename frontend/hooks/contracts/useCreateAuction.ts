@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import { fanArtContractAddress, abi as fanArtABI } from '@/lib/fanArtContract';
 import supabase from '@/lib/supabaseConfig';
+import { useWallet } from '@/components/WalletProvider';
 
 export const useCreateAuction = () => {
-  // Contract state
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
-  const [userAddress, setUserAddress] = useState<string>('');
+  // Use global wallet state
+  const { contract, userAddress, isConnected } = useWallet();
 
   // Form states
   const [tokenId, setTokenId] = useState<string>('');
@@ -16,7 +14,6 @@ export const useCreateAuction = () => {
   const [requiredPsgTokens, setRequiredPsgTokens] = useState<string>('');
 
   // Loading states
-  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -24,39 +21,10 @@ export const useCreateAuction = () => {
   // Transaction states
   const [txHash, setTxHash] = useState<string>('');
 
-  // Initialize contract connection
-  const initializeContract = async () => {
-    try {
-      setIsInitializing(true);
-      setError('');
-      
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(fanArtContractAddress, fanArtABI, signer);
-      
-      setProvider(provider);
-      setSigner(signer);
-      setContract(contract);
-      
-      // Get user address
-      const address = await signer.getAddress();
-      setUserAddress(address);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize contract');
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
   // Create auction function
   const createAuction = async () => {
-    if (!contract) {
-      setError('Contract not initialized');
+    if (!contract || !isConnected) {
+      setError('Please connect your wallet first');
       return;
     }
 
@@ -169,21 +137,6 @@ export const useCreateAuction = () => {
     }
   };
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      await initializeContract();
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
-  };
-
   // Reset form
   const resetForm = () => {
     setTokenId('');
@@ -195,11 +148,9 @@ export const useCreateAuction = () => {
   };
 
   return {
-    // Contract state
-    contract,
-    provider,
-    signer,
+    // Contract state from global wallet
     userAddress,
+    isConnected,
     
     // Form states
     tokenId,
@@ -210,7 +161,6 @@ export const useCreateAuction = () => {
     setRequiredPsgTokens,
     
     // Loading states
-    isInitializing,
     isCreating,
     error,
     success,
@@ -219,9 +169,7 @@ export const useCreateAuction = () => {
     txHash,
     
     // Functions
-    initializeContract,
     createAuction,
-    connectWallet,
     resetForm
   };
 }; 

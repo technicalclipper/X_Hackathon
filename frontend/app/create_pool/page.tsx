@@ -1,9 +1,11 @@
 "use client";
 
 import { useCreatePool, PoolType } from '@/hooks/contracts/useCreatePool';
-import { useEffect } from 'react';
+import { useWallet } from '@/components/WalletProvider';
 
 export default function CreatePoolPage() {
+  const { isConnected } = useWallet();
+  
   const {
     // Contract state
     userAddress,
@@ -20,7 +22,6 @@ export default function CreatePoolPage() {
     setVotingDeadline,
     
     // Loading states
-    isInitializing,
     isCreating,
     error,
     success,
@@ -30,19 +31,10 @@ export default function CreatePoolPage() {
     poolId,
     
     // Functions
-    initializeContract,
     createPool,
     resetForm,
-    connectWallet,
     getPoolTypeLabel
   } = useCreatePool();
-
-  // Auto-initialize on component mount
-  useEffect(() => {
-    if (typeof window.ethereum !== 'undefined') {
-      initializeContract();
-    }
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,22 +52,15 @@ export default function CreatePoolPage() {
           Create Fan Pool
         </h1>
 
-        {/* Wallet Connection */}
+        {/* Wallet Connection Status */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Wallet Connection</h2>
           
-          {!userAddress ? (
-            <button
-              onClick={connectWallet}
-              disabled={isInitializing}
-              className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
-                isInitializing
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {isInitializing ? 'Connecting...' : 'Connect Wallet'}
-            </button>
+          {!isConnected ? (
+            <div className="text-center py-4">
+              <p className="text-gray-600 mb-4">Please connect your wallet to create pools</p>
+              <p className="text-sm text-gray-500">Use the wallet button in the top right corner</p>
+            </div>
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-gray-600">
@@ -96,7 +81,7 @@ export default function CreatePoolPage() {
         </div>
 
         {/* Create Pool Form */}
-        {userAddress && isOwner && (
+        {isConnected && isOwner && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Pool Details</h2>
             

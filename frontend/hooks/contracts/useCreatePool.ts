@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import { fanArtContractAddress, abi as fanArtABI } from '@/lib/fanArtContract';
 import supabase from '@/lib/supabaseConfig';
+import { useWallet } from '@/components/WalletProvider';
+import React from 'react'; // Added missing import for React
 
 export enum PoolType {
   TIFO = 0,
@@ -18,11 +20,8 @@ export interface CreatePoolParams {
 }
 
 export const useCreatePool = () => {
-  // Contract state
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
-  const [userAddress, setUserAddress] = useState<string>('');
+  // Use global wallet state
+  const { contract, userAddress, isConnected } = useWallet();
   const [isOwner, setIsOwner] = useState<boolean>(false);
 
   // Form states
@@ -32,7 +31,6 @@ export const useCreatePool = () => {
   const [votingDeadline, setVotingDeadline] = useState<string>('');
 
   // Loading states
-  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -41,57 +39,32 @@ export const useCreatePool = () => {
   const [txHash, setTxHash] = useState<string>('');
   const [poolId, setPoolId] = useState<number | null>(null);
 
-  // Initialize contract connection
-  const initializeContract = async () => {
-    try {
-      setIsInitializing(true);
-      setError('');
-      
-      // Test Supabase connection first
-      console.log('Testing Supabase connection...');
-      const { data: testData, error: testError } = await supabase
-        .from('pools')
-        .select('count')
-        .limit(1);
-      
-      if (testError) {
-        console.error('Supabase connection test failed:', testError);
-        setError(`Supabase connection failed: ${testError.message}`);
-        return;
+  // Check if user is owner when contract is available
+  const checkOwnerStatus = async () => {
+    if (contract && userAddress) {
+      try {
+        const owner = await contract.owner();
+        setIsOwner(owner.toLowerCase() === userAddress.toLowerCase());
+      } catch (err) {
+        console.error('Error checking owner status:', err);
+        setIsOwner(false);
       }
-      
-      console.log('Supabase connection successful');
-      
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(fanArtContractAddress, fanArtABI, signer);
-      
-      setProvider(provider);
-      setSigner(signer);
-      setContract(contract);
-      
-      // Get user address
-      const address = await signer.getAddress();
-      setUserAddress(address);
-      
-      // Check if user is owner
-      const owner = await contract.owner();
-      setIsOwner(owner.toLowerCase() === address.toLowerCase());
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize contract');
-    } finally {
-      setIsInitializing(false);
     }
   };
 
+  // Check owner status when contract or user address changes
+  React.useEffect(() => {
+    checkOwnerStatus();
+  }, [contract, userAddress]);
+
   // Create pool function
   const createPool = async () => {
-    if (!contract || !isOwner) {
+    if (!contract || !isConnected) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    if (!isOwner) {
       setError('You must be the contract owner to create pools');
       return;
     }
@@ -218,21 +191,6 @@ export const useCreatePool = () => {
     setPoolId(null);
   };
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      await initializeContract();
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
-  };
-
   // Get pool type label
   const getPoolTypeLabel = (type: PoolType): string => {
     switch (type) {
@@ -245,11 +203,9 @@ export const useCreatePool = () => {
   };
 
   return {
-    // Contract state
-    contract,
-    provider,
-    signer,
+    // Contract state from global wallet
     userAddress,
+    isConnected,
     isOwner,
     
     // Form states
@@ -263,7 +219,6 @@ export const useCreatePool = () => {
     setVotingDeadline,
     
     // Loading states
-    isInitializing,
     isCreating,
     error,
     success,
@@ -273,10 +228,8 @@ export const useCreatePool = () => {
     poolId,
     
     // Functions
-    initializeContract,
     createPool,
     resetForm,
-    connectWallet,
     getPoolTypeLabel,
     
     // Constants

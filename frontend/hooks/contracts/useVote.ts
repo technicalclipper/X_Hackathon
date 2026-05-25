@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import { fanArtContractAddress, abi as fanArtABI } from '@/lib/fanArtContract';
 import supabase from '@/lib/supabaseConfig';
+import { useWallet } from '@/components/WalletProvider';
 
 export interface VoteParams {
   poolId: number;
@@ -10,15 +11,10 @@ export interface VoteParams {
 }
 
 export const useVote = () => {
-  // Contract state
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
-  const [userAddress, setUserAddress] = useState<string>('');
-  const [userPsgBalance, setUserPsgBalance] = useState<string>('');
+  // Use global wallet state
+  const { contract, userAddress, isConnected, psgBalance } = useWallet();
 
   // Loading states
-  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [isVoting, setIsVoting] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -26,56 +22,16 @@ export const useVote = () => {
   // Transaction states
   const [txHash, setTxHash] = useState<string>('');
 
-  // Initialize contract connection
-  const initializeContract = async () => {
-    try {
-      setIsInitializing(true);
-      setError('');
-      
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(fanArtContractAddress, fanArtABI, signer);
-      
-      setProvider(provider);
-      setSigner(signer);
-      setContract(contract);
-      
-      // Get user address
-      const address = await signer.getAddress();
-      setUserAddress(address);
-      
-      // Get PSG token balance
-      const psgToken = await contract.psgToken();
-      const psgContract = new ethers.Contract(psgToken, [
-        "function balanceOf(address owner) view returns (uint256)",
-        "function decimals() view returns (uint8)"
-      ], signer);
-      
-      const balance = await psgContract.balanceOf(address);
-      const decimals = await psgContract.decimals();
-      setUserPsgBalance(ethers.formatUnits(balance, decimals));
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize contract');
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
   // Vote function - takes poolId and contractSubmissionId
   const vote = async (poolId: number, contractSubmissionId: number) => {
-    if (!contract) {
-      setError('Contract not initialized');
+    if (!contract || !isConnected) {
+      setError('Please connect your wallet first');
       return;
     }
 
     // Check if user has enough PSG tokens (10 tokens required)
     const requiredTokens = 10;
-    const userBalance = parseFloat(userPsgBalance);
+    const userBalance = parseFloat(psgBalance);
     if (userBalance < requiredTokens) {
       setError(`You need at least ${requiredTokens} PSG tokens to vote. Current balance: ${userBalance}`);
       return;
@@ -228,31 +184,13 @@ export const useVote = () => {
     }
   };
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      await initializeContract();
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
-  };
-
   return {
-    // Contract state
-    contract,
-    provider,
-    signer,
+    // Contract state from global wallet
     userAddress,
-    userPsgBalance,
+    isConnected,
+    userPsgBalance: psgBalance,
     
     // Loading states
-    isInitializing,
     isVoting,
     error,
     success,
@@ -261,8 +199,6 @@ export const useVote = () => {
     txHash,
     
     // Functions
-    initializeContract,
-    vote,
-    connectWallet
+    vote
   };
 }; 

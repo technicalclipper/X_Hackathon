@@ -1,19 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useOwnedNFTs } from '@/hooks/database/useOwnedNFTs';
 import { useCreateAuction } from '@/hooks/contracts/useCreateAuction';
-import { ethers } from 'ethers';
-
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+import { useWallet } from '@/components/WalletProvider';
 
 export default function DemoMarketPage() {
-  const [userAddress, setUserAddress] = useState<string>('');
-  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const { userAddress, isConnected } = useWallet();
   const [showAuctionForm, setShowAuctionForm] = useState<boolean>(false);
   const [selectedNFT, setSelectedNFT] = useState<any>(null);
 
@@ -42,9 +35,6 @@ export default function DemoMarketPage() {
   } = useOwnedNFTs(userAddress);
 
   const {
-    // Contract state
-    userAddress: auctionUserAddress,
-    
     // Form states
     tokenId,
     setTokenId,
@@ -54,7 +44,6 @@ export default function DemoMarketPage() {
     setRequiredPsgTokens,
     
     // Loading states
-    isInitializing: isAuctionInitializing,
     isCreating,
     error: auctionError,
     success: auctionSuccess,
@@ -64,50 +53,8 @@ export default function DemoMarketPage() {
     
     // Functions
     createAuction,
-    connectWallet: connectAuctionWallet,
     resetForm: resetAuctionForm
   } = useCreateAuction();
-
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      setIsConnecting(true);
-      
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      
-      setUserAddress(address);
-    } catch (err) {
-      console.error('Error connecting wallet:', err);
-      alert(err instanceof Error ? err.message : 'Failed to connect wallet');
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  // Auto-connect if wallet is already connected
-  useEffect(() => {
-    const checkWalletConnection = async () => {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.listAccounts();
-          if (accounts.length > 0) {
-            setUserAddress(accounts[0].address);
-          }
-        } catch (err) {
-          console.log('No wallet connected');
-        }
-      }
-    };
-
-    checkWalletConnection();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-8">
@@ -116,22 +63,15 @@ export default function DemoMarketPage() {
           Demo Market - Your Owned NFTs
         </h1>
 
-        {/* Wallet Connection */}
+        {/* Wallet Connection Status */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Wallet Connection</h2>
           
-          {!userAddress ? (
-            <button
-              onClick={connectWallet}
-              disabled={isConnecting}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                isConnecting
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-            </button>
+          {!isConnected ? (
+            <div className="text-center py-4">
+              <p className="text-gray-600 mb-4">Please connect your wallet to view your NFTs</p>
+              <p className="text-sm text-gray-500">Use the wallet button in the top right corner</p>
+            </div>
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-gray-600">
@@ -145,7 +85,7 @@ export default function DemoMarketPage() {
         </div>
 
         {/* Controls */}
-        {userAddress && (
+        {isConnected && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               {/* Filter */}
@@ -205,7 +145,7 @@ export default function DemoMarketPage() {
         )}
 
         {/* NFTs Grid */}
-        {userAddress && !isLoading && (
+        {isConnected && !isLoading && (
           <div className="space-y-6">
             {filteredNFTs.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -303,7 +243,7 @@ export default function DemoMarketPage() {
         )}
 
         {/* Stats */}
-        {userAddress && ownedNFTs.length > 0 && (
+        {isConnected && ownedNFTs.length > 0 && (
           <div className="mt-8 bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">Your NFT Collection Stats</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -380,16 +320,10 @@ export default function DemoMarketPage() {
                 </p>
               </div>
 
-              {/* Wallet Connection */}
-              {!auctionUserAddress ? (
+              {/* Wallet Connection Status */}
+              {!isConnected ? (
                 <div className="text-center py-4">
-                  <button
-                    onClick={connectAuctionWallet}
-                    disabled={isAuctionInitializing}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
-                  >
-                    {isAuctionInitializing ? 'Connecting...' : 'Connect Wallet to Create Auction'}
-                  </button>
+                  <p className="text-gray-600">Please connect your wallet to create auctions</p>
                 </div>
               ) : (
                 <form onSubmit={(e) => {

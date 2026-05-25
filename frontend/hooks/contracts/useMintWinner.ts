@@ -2,17 +2,15 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import { fanArtContractAddress, abi as fanArtABI } from '@/lib/fanArtContract';
 import supabase from '@/lib/supabaseConfig';
+import { useWallet } from '@/components/WalletProvider';
+import React from 'react';
 
 export const useMintWinner = () => {
-  // Contract state
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
-  const [userAddress, setUserAddress] = useState<string>('');
+  // Use global wallet state
+  const { contract, userAddress, isConnected } = useWallet();
   const [isOwner, setIsOwner] = useState<boolean>(false);
 
   // Loading states
-  const [isInitializing, setIsInitializing] = useState<boolean>(false);
   const [isMinting, setIsMinting] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -23,43 +21,28 @@ export const useMintWinner = () => {
   const [winnerSubmissionId, setWinnerSubmissionId] = useState<number | null>(null);
   const [winnerAddress, setWinnerAddress] = useState<string>('');
 
-  // Initialize contract connection
-  const initializeContract = async () => {
-    try {
-      setIsInitializing(true);
-      setError('');
-      
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
+  // Check if user is owner when contract is available
+  const checkOwnerStatus = async () => {
+    if (contract && userAddress) {
+      try {
+        const owner = await contract.owner();
+        setIsOwner(owner.toLowerCase() === userAddress.toLowerCase());
+      } catch (err) {
+        console.error('Error checking owner status:', err);
+        setIsOwner(false);
       }
-      
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(fanArtContractAddress, fanArtABI, signer);
-      
-      setProvider(provider);
-      setSigner(signer);
-      setContract(contract);
-      
-      // Get user address
-      const address = await signer.getAddress();
-      setUserAddress(address);
-      
-      // Check if user is contract owner
-      const owner = await contract.owner();
-      setIsOwner(owner.toLowerCase() === address.toLowerCase());
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize contract');
-    } finally {
-      setIsInitializing(false);
     }
   };
 
+  // Check owner status when contract or user address changes
+  React.useEffect(() => {
+    checkOwnerStatus();
+  }, [contract, userAddress]);
+
   // Mint winner function
   const mintWinner = async (poolId: number) => {
-    if (!contract) {
-      setError('Contract not initialized');
+    if (!contract || !isConnected) {
+      setError('Please connect your wallet first');
       return;
     }
 
@@ -215,31 +198,13 @@ export const useMintWinner = () => {
     }
   };
 
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum === 'undefined') {
-        throw new Error('MetaMask not installed');
-      }
-      
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      await initializeContract();
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
-  };
-
   return {
-    // Contract state
-    contract,
-    provider,
-    signer,
+    // Contract state from global wallet
     userAddress,
+    isConnected,
     isOwner,
     
     // Loading states
-    isInitializing,
     isMinting,
     error,
     success,
@@ -251,9 +216,7 @@ export const useMintWinner = () => {
     winnerAddress,
     
     // Functions
-    initializeContract,
     mintWinner,
-    connectWallet,
     isPoolReadyForMinting,
     getPoolDetails
   };

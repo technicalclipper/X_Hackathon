@@ -6,8 +6,10 @@ import { usePlaceBid } from '@/hooks/contracts/usePlaceBid';
 import { useBidHistory } from '@/hooks/database/useBidHistory';
 import { useEndAuction } from '@/hooks/contracts/useEndAuction';
 import { useEndedAuctions } from '@/hooks/database/useAuctions';
+import { useWallet } from '@/components/WalletProvider';
 
 export default function AuctionsPage() {
+  const { userAddress, isConnected } = useWallet();
   const [showBidForm, setShowBidForm] = useState<boolean>(false);
   const [showBidHistory, setShowBidHistory] = useState<boolean>(false);
   const [showEndAuctionForm, setShowEndAuctionForm] = useState<boolean>(false);
@@ -39,9 +41,6 @@ export default function AuctionsPage() {
   } = useAuctions();
 
   const {
-    // Contract state
-    userAddress: bidUserAddress,
-    
     // Form states
     tokenId,
     setTokenId,
@@ -49,7 +48,6 @@ export default function AuctionsPage() {
     setBidAmount,
     
     // Loading states
-    isInitializing: isBidInitializing,
     isBidding,
     error: bidError,
     success: bidSuccess,
@@ -59,7 +57,6 @@ export default function AuctionsPage() {
     
     // Functions
     placeBid,
-    connectWallet: connectBidWallet,
     resetForm: resetBidForm
   } = usePlaceBid();
 
@@ -82,15 +79,11 @@ export default function AuctionsPage() {
   } = useBidHistory(selectedAuction?.token_id);
 
   const {
-    // Contract state
-    userAddress: endAuctionUserAddress,
-    
     // Form states
     tokenId: endAuctionTokenId,
     setTokenId: setEndAuctionTokenId,
     
     // Loading states
-    isInitializing: isEndAuctionInitializing,
     isEnding,
     error: endAuctionError,
     success: endAuctionSuccess,
@@ -102,7 +95,6 @@ export default function AuctionsPage() {
     
     // Functions
     endAuction,
-    connectWallet: connectEndAuctionWallet,
     resetForm: resetEndAuctionForm
   } = useEndAuction();
 
@@ -143,26 +135,18 @@ export default function AuctionsPage() {
           </div>
         </div>
 
-        {/* Debug Section - Temporary */}
+        {/* Wallet Connection Status */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
+          <h3 className="font-semibold text-yellow-800 mb-2">Wallet Status:</h3>
           <div className="text-sm text-yellow-700 space-y-1">
-            <p>Bid User Address: {bidUserAddress || 'Not connected'}</p>
-            <p>End Auction User Address: {endAuctionUserAddress || 'Not connected'}</p>
-            <p>Bid Initializing: {isBidInitializing ? 'Yes' : 'No'}</p>
-            <p>End Auction Initializing: {isEndAuctionInitializing ? 'Yes' : 'No'}</p>
+            <p>Connected: {isConnected ? 'Yes' : 'No'}</p>
+            {isConnected && <p>Address: {userAddress}</p>}
             <p>Total Auctions: {auctions.length}</p>
             <p>Auctions with seller addresses: {auctions.filter(a => a.seller_address).length}</p>
           </div>
-          {!endAuctionUserAddress && (
+          {!isConnected && (
             <div className="mt-3">
-              <button
-                onClick={connectEndAuctionWallet}
-                disabled={isEndAuctionInitializing}
-                className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-300"
-              >
-                {isEndAuctionInitializing ? 'Connecting...' : 'Connect Wallet for End Auction'}
-              </button>
+              <p className="text-sm text-yellow-700">Please connect your wallet to interact with auctions</p>
             </div>
           )}
         </div>
@@ -314,14 +298,14 @@ export default function AuctionsPage() {
                             setTokenId(auction.minted_token_id);
                             setShowBidForm(true);
                           }}
-                          disabled={!auction.active}
+                          disabled={!auction.active || !isConnected}
                           className={`w-full px-3 py-2 rounded text-sm transition-colors ${
-                            auction.active
+                            auction.active && isConnected
                               ? 'bg-blue-600 text-white hover:bg-blue-700'
                               : 'bg-gray-400 text-gray-600 cursor-not-allowed'
                           }`}
                         >
-                          {auction.active ? 'Place Bid' : 'Auction Ended'}
+                          {!isConnected ? 'Connect Wallet to Bid' : auction.active ? 'Place Bid' : 'Auction Ended'}
                         </button>
                         <button
                           onClick={() => {
@@ -334,7 +318,7 @@ export default function AuctionsPage() {
                         </button>
                         
                         {/* End Auction Button - Only show for auction owner */}
-                        {auction.active && auction.seller_address.toLowerCase() === endAuctionUserAddress?.toLowerCase() && (
+                        {auction.active && auction.seller_address.toLowerCase() === userAddress?.toLowerCase() && (
                           <button
                             onClick={() => {
                               setSelectedAuction(auction);
@@ -411,16 +395,10 @@ export default function AuctionsPage() {
                 )}
               </div>
 
-              {/* Wallet Connection */}
-              {!bidUserAddress ? (
+              {/* Wallet Connection Status */}
+              {!isConnected ? (
                 <div className="text-center py-4">
-                  <button
-                    onClick={connectBidWallet}
-                    disabled={isBidInitializing}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
-                  >
-                    {isBidInitializing ? 'Connecting...' : 'Connect Wallet to Bid'}
-                  </button>
+                  <p className="text-gray-600">Please connect your wallet to place bids</p>
                 </div>
               ) : (
                 <form onSubmit={(e) => {
@@ -689,16 +667,10 @@ export default function AuctionsPage() {
                 </ul>
               </div>
 
-              {/* Wallet Connection */}
-              {!endAuctionUserAddress ? (
+              {/* Wallet Connection Status */}
+              {!isConnected ? (
                 <div className="text-center py-4">
-                  <button
-                    onClick={connectEndAuctionWallet}
-                    disabled={isEndAuctionInitializing}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
-                  >
-                    {isEndAuctionInitializing ? 'Connecting...' : 'Connect Wallet to End Auction'}
-                  </button>
+                  <p className="text-gray-600">Please connect your wallet to end auctions</p>
                 </div>
               ) : (
                 <div className="space-y-4">
