@@ -7,6 +7,7 @@ export interface OwnedNFT {
   minted_token_id: string;
   mint_tx_hash: string;
   created_at: string;
+  current_owner_address: string;
   // Joined data from submissions
   pool_id: number;
   creator_address: string;
@@ -44,6 +45,7 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
 
       console.log('Fetching owned NFTs for address:', ownerAddress);
 
+      // Query NFTs based on current_owner_address instead of original creator
       const { data, error } = await supabase
         .from('nft_mints')
         .select(`
@@ -67,7 +69,7 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
             )
           )
         `)
-        .eq('submissions.creator_address', ownerAddress);
+        .eq('current_owner_address', ownerAddress);
 
       if (error) {
         console.error('Supabase error:', error);
@@ -81,6 +83,7 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
         minted_token_id: nft.minted_token_id,
         mint_tx_hash: nft.mint_tx_hash,
         created_at: nft.created_at,
+        current_owner_address: nft.current_owner_address,
         // Submission data
         pool_id: nft.submissions.pool_id,
         creator_address: nft.submissions.creator_address,

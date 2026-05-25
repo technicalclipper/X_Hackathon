@@ -80,6 +80,10 @@ export default function DemoMarketPage() {
               <p className="text-sm text-gray-600">
                 <span className="font-medium">Total NFTs:</span> {ownedNFTs.length}
               </p>
+              <p className="text-sm text-blue-600">
+                <span className="font-medium">Note:</span> This page shows NFTs you currently own. 
+                If you've sold NFTs in auctions, they won't appear here.
+              </p>
             </div>
           )}
         </div>

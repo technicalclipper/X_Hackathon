@@ -137,13 +137,14 @@ export const useMintWinner = () => {
         throw new Error(`Failed to find submission: ${submissionError.message}`);
       }
 
-      // Insert NFT mint record
+      // Insert NFT mint record with current owner
       const { data, error } = await supabase
         .from('nft_mints')
         .insert({
           submission_id: submission.id, // Use database submission ID
           minted_token_id: mintData.tokenId.toString(),
-          mint_tx_hash: mintData.txHash
+          mint_tx_hash: mintData.txHash,
+          current_owner_address: mintData.winnerAddress // Set initial owner
         })
         .select()
         .single();
