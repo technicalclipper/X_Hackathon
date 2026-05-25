@@ -54,16 +54,14 @@ CREATE TABLE nft_mints (
 sql
 Copy
 CREATE TABLE auctions (
-  id SERIAL PRIMARY KEY,
-  token_id INTEGER NOT NULL,
+  token_id INTEGER PRIMARY KEY,
   seller_address VARCHAR(42) NOT NULL,
   min_bid VARCHAR(255) NOT NULL,
   required_psg_tokens VARCHAR(255) NOT NULL,
   highest_bid VARCHAR(255),
   highest_bidder_address VARCHAR(42),
   active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(token_id, active) -- Only one active auction per token
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 7.

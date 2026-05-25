@@ -46,6 +46,19 @@ export const useCreateAuction = () => {
       console.log('Min bid (ETH):', minBid);
       console.log('Required PSG tokens:', requiredPsgTokens);
 
+      // Verify that the user owns this NFT
+      try {
+        const currentOwner = await contract.ownerOf(tokenIdNum);
+        if (currentOwner.toLowerCase() !== userAddress.toLowerCase()) {
+          setError('You do not own this NFT. Only the current owner can create an auction.');
+          return;
+        }
+        console.log('NFT ownership verified. Current owner:', currentOwner);
+      } catch (err) {
+        setError('Failed to verify NFT ownership. Please check the token ID.');
+        return;
+      }
+
       // Call smart contract
       const tx = await contract.createAuction(tokenIdNum, minBidWei, requiredPsgTokensWei);
       setTxHash(tx.hash);
@@ -111,26 +124,60 @@ export const useCreateAuction = () => {
     try {
       console.log('Adding auction to database:', auctionData);
 
-      // Insert auction record
-      const { data, error } = await supabase
+      // Check if there's already an auction for this token
+      const { data: existingAuction, error: checkError } = await supabase
         .from('auctions')
-        .insert({
-          token_id: auctionData.tokenId,
-          seller_address: auctionData.sellerAddress,
-          min_bid: auctionData.minBid,
-          required_psg_tokens: auctionData.requiredPsgTokens,
-          active: true
-        })
-        .select()
+        .select('*')
+        .eq('token_id', auctionData.tokenId)
         .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw new Error(`Failed to add auction to database: ${error.message}`);
+      let result;
+      if (existingAuction) {
+        // Update existing auction
+        console.log('Updating existing auction for token:', auctionData.tokenId);
+        const { data, error } = await supabase
+          .from('auctions')
+          .update({
+            seller_address: auctionData.sellerAddress,
+            min_bid: auctionData.minBid,
+            required_psg_tokens: auctionData.requiredPsgTokens,
+            highest_bid: null,
+            highest_bidder_address: null,
+            active: true
+          })
+          .eq('token_id', auctionData.tokenId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Supabase error updating auction:', error);
+          throw new Error(`Failed to update auction in database: ${error.message}`);
+        }
+        result = data;
+      } else {
+        // Create new auction record
+        console.log('Creating new auction record for token:', auctionData.tokenId);
+        const { data, error } = await supabase
+          .from('auctions')
+          .insert({
+            token_id: auctionData.tokenId,
+            seller_address: auctionData.sellerAddress,
+            min_bid: auctionData.minBid,
+            required_psg_tokens: auctionData.requiredPsgTokens,
+            active: true
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Supabase error creating auction:', error);
+          throw new Error(`Failed to add auction to database: ${error.message}`);
+        }
+        result = data;
       }
 
-      console.log('Successfully added auction to database:', data);
-      return data;
+      console.log('Successfully processed auction in database:', result);
+      return result;
     } catch (err) {
       console.error('Database error:', err);
       throw err;
