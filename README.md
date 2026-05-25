@@ -4,7 +4,7 @@
 
 ![Fanvas Logo](https://img.shields.io/badge/Fanvas-Democratizing%20Fan%20Art-blue?style=for-the-badge&logo=ethereum)
 ![Chiliz Integration](https://img.shields.io/badge/Chiliz-Powered%20by%20Fan%20Tokens-green?style=for-the-badge&logo=chiliz)
-![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum%20%7C%20Sepolia-orange?style=for-the-badge&logo=ethereum)
+![Blockchain](https://img.shields.io/badge/Blockchain-Chiliz%20Spicy%20Testnet-orange?style=for-the-badge&logo=chiliz)
 
 **Where fandom meets blockchain, and creativity becomes legacy** 🏆⚽
 
@@ -23,6 +23,7 @@
 
 ![Chiliz Integration](https://img.shields.io/badge/PSG%20Tokens-Required%20for%20Voting%20%26%20Bidding-brightgreen?style=for-the-badge)
 ![Fan Engagement](https://img.shields.io/badge/Fan%20Engagement-Token%20Gated%20Access-blue?style=for-the-badge)
+![PSG Contract](https://img.shields.io/badge/PSG%20Contract-0xC1771089870D3dDF8174775ed12D09Ff8DeCc550-purple?style=for-the-badge)
 
 </div>
 
@@ -58,7 +59,7 @@ By bridging fan culture with Web3, Fanvas creates emotional and economic value, 
 
 ---
 
-## 🏗️ **Architecture**
+## ��️ **Architecture**
 
 ### 🎯 **Smart Contract: `FanEngagementPool.sol`**
 
@@ -216,8 +217,8 @@ struct Auction {
 | 🎨 **Frontend** | Next.js, TypeScript, Tailwind CSS | User interface |
 | 🗄️ **Database** | Supabase (PostgreSQL) | Data storage |
 | 📁 **Storage** | IPFS via Pinata | Content storage |
-| ⛓️ **Blockchain** | Ethereum (Sepolia testnet) | Smart contract execution |
-| 🎯 **Fan Tokens** | **Chiliz (PSG tokens)** | **Token-gated access** |
+| ⛓️ **Blockchain** | **Chiliz Spicy Testnet** | **Smart contract execution** |
+| 🎯 **Fan Tokens** | **PSG Token (0xC1771089870D3dDF8174775ed12D09Ff8DeCc550)** | **Token-gated access** |
 
 </div>
 
@@ -229,6 +230,7 @@ struct Auction {
 - Node.js 18+
 - MetaMask wallet
 - **PSG tokens (for testing)** 🎯
+- **Chiliz Spicy testnet configuration**
 
 ### 🔧 **Smart Contract Setup**
 ```bash
@@ -238,8 +240,8 @@ npm install
 # Compile contracts
 npx hardhat compile
 
-# Deploy to testnet
-npx hardhat run scripts/deploy.js --network sepolia
+# Deploy to Chiliz Spicy testnet
+npx hardhat run scripts/deploy.js --network chiliz-spicy
 ```
 
 ### 🎨 **Frontend Setup**
@@ -264,6 +266,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Contract
 NEXT_PUBLIC_FAN_ART_CONTRACT_ADDRESS=your_contract_address
+
+# Chiliz Configuration
+NEXT_PUBLIC_CHILIZ_NETWORK_ID=88882
+NEXT_PUBLIC_PSG_TOKEN_ADDRESS=0xC1771089870D3dDF8174775ed12D09Ff8DeCc550
 
 # Pinata
 PINATA_JWT=your_pinata_jwt
@@ -314,13 +320,13 @@ PINATA_GATEWAY_URL=your_pinata_gateway_url
 | Token | Purpose | Integration |
 |-------|---------|-------------|
 | **🎯 PSG Tokens** | **Voting & Bidding Access** | **Chiliz Fan Tokens** |
-| **⛓️ ETH** | **Auction Bidding** | **Native Currency** |
+| **⛓️ CHZ** | **Auction Bidding** | **Chiliz Native Currency** |
 | **🏆 NFTs** | **Winner Rewards** | **ERC-721 Tokens** |
 
 </div>
 
 - **🎯 PSG Token Integration**: Required for voting and bidding
-- **⛓️ ETH for Bidding**: Native currency for NFT auctions
+- **⛓️ CHZ for Bidding**: Chiliz native currency for NFT auctions
 - **🏆 Creator Rewards**: NFT ownership for winning submissions
 - **📈 Fan Token Utility**: Increased demand for PSG tokens
 
@@ -332,10 +338,26 @@ PINATA_GATEWAY_URL=your_pinata_gateway_url
 
 | Environment | Network | Purpose |
 |-------------|---------|---------|
-| 🧪 **Development** | Sepolia | Testing & Development |
-| 🚀 **Production** | Ethereum | Live Platform |
+| 🧪 **Development** | **Chiliz Spicy Testnet** | **Testing & Development** |
+| 🚀 **Production** | **Chiliz Mainnet** | **Live Platform** |
 
 </div>
+
+### **🌶️ Chiliz Spicy Testnet Configuration**
+```javascript
+// Network Configuration
+{
+  chainId: 88882,
+  chainName: 'Chiliz Spicy Testnet',
+  nativeCurrency: {
+    name: 'CHZ',
+    symbol: 'CHZ',
+    decimals: 18
+  },
+  rpcUrls: ['https://spicy-rpc.chiliz.com'],
+  blockExplorerUrls: ['https://spicy-explorer.chiliz.com']
+}
+```
 
 ---
 
@@ -403,5 +425,7 @@ MIT License - see LICENSE file for details
 ## 🏆 **Fanvas** - Where fandom meets blockchain, and creativity becomes legacy. ⚽
 
 **Powered by Chiliz Fan Tokens** 🎯
+
+**PSG Token Contract**: `0xC1771089870D3dDF8174775ed12D09Ff8DeCc550`
 
 </div> 
