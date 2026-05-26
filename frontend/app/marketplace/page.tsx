@@ -23,7 +23,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -64,6 +63,7 @@ import { useCreateAuction } from "@/hooks/contracts/useCreateAuction";
 import { useAuctions } from "@/hooks/database/useAuctions";
 import { useBidHistory } from "@/hooks/database/useBidHistory";
 import { usePlaceBid } from "@/hooks/contracts/usePlaceBid";
+import { useEndAuction } from "@/hooks/contracts/useEndAuction";
 
 interface NFTItem {
   id: string;
@@ -193,6 +193,20 @@ export default function NFTMarketplace() {
     resetForm: resetBidForm,
   } = usePlaceBid();
 
+  // End auction hook
+  const {
+    tokenId: endAuctionTokenId,
+    setTokenId: setEndAuctionTokenId,
+    isEnding,
+    error: endAuctionError,
+    success: endAuctionSuccess,
+    txHash: endAuctionTxHash,
+    winnerAddress,
+    finalAmount,
+    endAuction,
+    resetForm: resetEndAuctionForm,
+  } = useEndAuction();
+
   // Handle successful auction creation
   useEffect(() => {
     if (auctionSuccess) {
@@ -214,6 +228,22 @@ export default function NFTMarketplace() {
       resetBidForm();
     }
   }, [bidSuccess, refreshAuctions, refreshBidHistory, resetBidForm]);
+
+  // Handle successful auction ending
+  useEffect(() => {
+    if (endAuctionSuccess) {
+      refreshAuctions(); // Refresh auctions to update status
+      refreshNFTs(); // Refresh NFTs to update ownership
+      resetEndAuctionForm();
+    }
+  }, [endAuctionSuccess, refreshAuctions, refreshNFTs, resetEndAuctionForm]);
+
+  // Auto-call endAuction when token ID is set
+  useEffect(() => {
+    if (endAuctionTokenId && endAuctionTokenId !== "") {
+      endAuction();
+    }
+  }, [endAuctionTokenId, endAuction]);
 
   // Static NFT items replaced with real auction data from useAuctions hook
 
@@ -407,6 +437,11 @@ export default function NFTMarketplace() {
     setSelectedTokenId(null);
   };
 
+  const handleEndAuction = (tokenId: number) => {
+    // Set the token ID which will trigger the effect below
+    setEndAuctionTokenId(tokenId.toString());
+  };
+
   // Update search term in auctions hook when local search changes
   useEffect(() => {
     setAuctionSearchTerm(searchTerm);
@@ -506,7 +541,7 @@ export default function NFTMarketplace() {
               { id: "marketplace", label: "MARKETPLACE", icon: ShoppingBag },
               { id: "my-nfts", label: "MY NFTs", icon: ImageIcon },
               { id: "my-bids", label: "MY BIDS", icon: Gavel },
-              { id: "sell", label: "SELL NFT", icon: Upload },
+              { id: "sell", label: "YOUR LISTINGS", icon: Upload },
             ].map((tab) => (
               <Button
                 key={tab.id}
@@ -1290,152 +1325,273 @@ export default function NFTMarketplace() {
           </motion.div>
         )}
 
-        {/* Sell NFT Tab */}
+        {/* Your Listings Tab */}
         {activeTab === "sell" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="max-w-2xl mx-auto">
-              <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <CardHeader className="bg-black text-white p-6">
-                  <CardTitle className="text-2xl font-black tracking-wider">
-                    SELL YOUR NFT
-                  </CardTitle>
-                  <p className="text-gray-300 font-mono text-sm">
-                    LIST YOUR NFT FOR SALE OR AUCTION
+            {/* Loading State */}
+            {auctionsLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-xl font-black text-black">
+                    LOADING YOUR LISTINGS...
                   </p>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    {/* NFT Selection */}
-                    <div>
-                      <label className="block text-sm font-black text-gray-700 mb-2">
-                        SELECT NFT TO SELL
-                      </label>
-                      <div className="grid grid-cols-3 gap-4">
-                        {nftsLoading ? (
-                          <div className="col-span-3 text-center py-4">
-                            <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-sm font-black">
-                              Loading NFTs...
-                            </p>
-                          </div>
-                        ) : filteredOwnedNFTs.length === 0 ? (
-                          <div className="col-span-3 text-center py-4">
-                            <p className="text-sm font-black text-gray-600">
-                              No NFTs available to sell
-                            </p>
-                          </div>
-                        ) : (
-                          filteredOwnedNFTs.map((nft) => (
-                            <div
-                              key={nft.id}
-                              className="border-4 border-black p-2 cursor-pointer hover:bg-gray-100 transition-colors"
-                            >
-                              <div className="h-20 bg-gray-200 mb-2 overflow-hidden">
-                                {nft.content_url ? (
-                                  <img
-                                    src={getIPFSGatewayUrl(nft.content_url)}
-                                    alt={`NFT #${nft.minted_token_id}`}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target =
-                                        e.target as HTMLImageElement;
-                                      target.style.display = "none";
-                                      const fallback =
-                                        target.nextElementSibling as HTMLElement;
-                                      if (fallback) {
-                                        fallback.style.display = "flex";
-                                      }
-                                    }}
-                                  />
-                                ) : null}
-                                <div
-                                  className={`w-full h-full flex items-center justify-center ${
-                                    nft.content_url ? "hidden" : ""
-                                  }`}
-                                >
-                                  <ImageIcon className="w-8 h-8 text-gray-400" />
-                                </div>
-                              </div>
-                              <p className="text-xs font-black text-center">
-                                {nft.match_id} -{" "}
-                                {getPoolTypeLabel(nft.pool_type)}
-                              </p>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
+                </div>
+              </div>
+            )}
 
-                    {/* Sale Type */}
-                    <div>
-                      <label className="block text-sm font-black text-gray-700 mb-2">
-                        SALE TYPE
-                      </label>
-                      <div className="flex gap-4">
-                        <Button
-                          variant="noShadow"
-                          className="flex-1 bg-white text-black border-2 border-black font-black hover:bg-gray-100"
-                        >
-                          <ShoppingBag className="w-4 h-4 mr-2" />
-                          FIXED PRICE
-                        </Button>
-                        <Button
-                          variant="noShadow"
-                          className="flex-1 bg-white text-black border-2 border-black font-black hover:bg-gray-100"
-                        >
-                          <Gavel className="w-4 h-4 mr-2" />
-                          AUCTION
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label className="block text-sm font-black text-gray-700 mb-2">
-                        PRICE (CHZ)
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="Enter price in CHZ"
-                        value={listingPrice}
-                        onChange={(e) => setListingPrice(e.target.value)}
-                        className="border-2 border-black font-black"
-                      />
-                    </div>
-
-                    {/* Duration (for auctions) */}
-                    <div>
-                      <label className="block text-sm font-black text-gray-700 mb-2">
-                        AUCTION DURATION
-                      </label>
-                      <div className="flex gap-2">
-                        {["1 DAY", "3 DAYS", "7 DAYS", "14 DAYS"].map(
-                          (duration) => (
-                            <Button
-                              key={duration}
-                              variant="noShadow"
-                              className="flex-1 bg-white text-black border-2 border-black font-black hover:bg-gray-100 text-xs"
-                            >
-                              {duration}
-                            </Button>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <Button className="w-full bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black text-lg py-3">
-                      <Upload className="w-5 h-5 mr-2" />
-                      LIST NFT FOR SALE
-                    </Button>
+            {/* Error State */}
+            {auctionsError && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="text-red-500 text-4xl font-black mb-4">
+                    ERROR
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <p className="text-black font-bold mb-4">{auctionsError}</p>
+                  <Button
+                    onClick={refreshAuctions}
+                    className="bg-black text-white font-black border-2 border-border"
+                  >
+                    RETRY
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* User's Active Auctions */}
+            {!auctionsLoading && !auctionsError && (
+              <>
+                {!isConnected ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gray-200 border-4 border-black rounded-full flex items-center justify-center mx-auto mb-4">
+                        <User className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-xl font-black text-black mb-2">
+                        WALLET NOT CONNECTED
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        Please connect your wallet to view your listings.
+                      </p>
+                      <Button
+                        onClick={() => router.push("/")}
+                        className="bg-blue-500 text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black"
+                      >
+                        CONNECT WALLET
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {(() => {
+                      const userAuctions = filteredAuctions.filter(
+                        (auction) =>
+                          auction.creator_address.toLowerCase() ===
+                          userAddress?.toLowerCase()
+                      );
+
+                      return userAuctions.length === 0 ? (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="text-center">
+                            <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <p className="text-xl font-black text-black mb-2">
+                              NO ACTIVE LISTINGS
+                            </p>
+                            <p className="text-gray-600 mb-4">
+                              You don't have any active auctions. List your NFTs
+                              from the "MY NFTs" tab.
+                            </p>
+                            <Button
+                              onClick={() => setActiveTab("my-nfts")}
+                              className="bg-green-500 text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black"
+                            >
+                              VIEW MY NFTs
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {userAuctions.map((auction, index) => (
+                            <motion.div
+                              key={auction.token_id}
+                              initial={{ y: 50, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: index * 0.1, duration: 0.6 }}
+                            >
+                              <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 h-[520px] flex flex-col">
+                                <CardContent className="p-0 flex flex-col h-full">
+                                  {/* NFT Image */}
+                                  <div className="relative">
+                                    <div className="h-48 bg-gray-200 border-b-4 border-black overflow-hidden">
+                                      {auction.content_url ? (
+                                        <img
+                                          src={getAuctionGatewayUrl(
+                                            auction.content_url
+                                          )}
+                                          alt={`${
+                                            auction.match_id
+                                          } - ${getAuctionPoolTypeLabel(
+                                            auction.pool_type
+                                          )}`}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            const target =
+                                              e.target as HTMLImageElement;
+                                            target.style.display = "none";
+                                            const fallback =
+                                              target.nextElementSibling as HTMLElement;
+                                            if (fallback) {
+                                              fallback.style.display = "flex";
+                                            }
+                                          }}
+                                        />
+                                      ) : null}
+                                      <div
+                                        className={`absolute inset-0 flex items-center justify-center ${
+                                          auction.content_url ? "hidden" : ""
+                                        }`}
+                                      >
+                                        <ImageIcon className="w-16 h-16 text-gray-400" />
+                                      </div>
+                                    </div>
+
+                                    {/* Status Badge */}
+                                    <Badge className="absolute top-2 right-2 bg-blue-500 text-white border-2 border-black font-black">
+                                      YOUR LISTING
+                                    </Badge>
+                                  </div>
+
+                                  {/* Auction Details */}
+                                  <div className="p-4 flex flex-col flex-grow">
+                                    <h3 className="font-black text-lg mb-2">
+                                      {auction.match_id} -{" "}
+                                      {getAuctionPoolTypeLabel(
+                                        auction.pool_type
+                                      )}
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mb-3">
+                                      TOKEN ID: {auction.token_id}
+                                    </p>
+
+                                    {/* Auction Info */}
+                                    <div className="space-y-2 mb-4">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-gray-600">
+                                          CURRENT BID
+                                        </span>
+                                        <span className="text-lg font-black">
+                                          {auction.highest_bid
+                                            ? `${formatEther(
+                                                auction.highest_bid
+                                              ).toFixed(3)} CHZ`
+                                            : `${formatEther(
+                                                auction.min_bid
+                                              ).toFixed(3)} CHZ`}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-gray-600">
+                                          MIN BID
+                                        </span>
+                                        <span className="text-sm font-black">
+                                          {formatEther(auction.min_bid).toFixed(
+                                            3
+                                          )}{" "}
+                                          CHZ
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-gray-600">
+                                          HIGHEST BIDDER
+                                        </span>
+                                        <span className="text-sm font-black">
+                                          {auction.highest_bidder_address
+                                            ? `${auction.highest_bidder_address.slice(
+                                                0,
+                                                6
+                                              )}...${auction.highest_bidder_address.slice(
+                                                -4
+                                              )}`
+                                            : "No bids yet"}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-gray-600">
+                                          VOTES
+                                        </span>
+                                        <span className="text-sm font-black">
+                                          {auction.vote_count}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2 mt-auto">
+                                      <Button
+                                        onClick={() =>
+                                          handleOpenBidHistory(auction.token_id)
+                                        }
+                                        className="flex-1 bg-gray-200 text-black border-2 border-black font-black hover:bg-gray-300 transition-colors"
+                                      >
+                                        <History className="w-4 h-4 mr-2" />
+                                        VIEW BIDS
+                                      </Button>
+                                      <Button
+                                        onClick={() =>
+                                          handleEndAuction(auction.token_id)
+                                        }
+                                        disabled={isEnding}
+                                        className="flex-1 bg-red-500 text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isEnding ? (
+                                          "ENDING..."
+                                        ) : (
+                                          <>
+                                            <Gavel className="w-4 h-4 mr-2" />
+                                            END AUCTION
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+
+                                    {/* Status Messages */}
+                                    {endAuctionError && (
+                                      <div className="mt-2 text-xs font-black text-red-500 bg-red-50 p-2 border border-red-200 rounded">
+                                        {endAuctionError}
+                                      </div>
+                                    )}
+                                    {endAuctionSuccess && (
+                                      <div className="mt-2 text-xs font-black text-green-500 bg-green-50 p-2 border border-green-200 rounded">
+                                        {endAuctionSuccess}
+                                      </div>
+                                    )}
+                                    {endAuctionTxHash && (
+                                      <div className="mt-2 text-xs font-black text-blue-500 bg-blue-50 p-2 border border-blue-200 rounded">
+                                        TX: {endAuctionTxHash.slice(0, 10)}...
+                                      </div>
+                                    )}
+                                    {winnerAddress && (
+                                      <div className="mt-2 text-xs font-black text-green-500 bg-green-50 p-2 border border-green-200 rounded">
+                                        Winner: {winnerAddress.slice(0, 6)}...
+                                        {winnerAddress.slice(-4)}
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+              </>
+            )}
           </motion.div>
         )}
       </div>
