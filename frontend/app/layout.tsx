@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
+import { WalletButton } from "@/components/WalletButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Fanvas - Democratizing Fan Art",
-  description: "Create, vote, and own official club visuals powered by Chiliz fan tokens",
+  description:
+    "Create, vote, and own official club visuals powered by Chiliz fan tokens",
 };
 
 export default function RootLayout({
@@ -20,6 +22,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <WalletProvider>
           {children}
+          <div className="fixed top-4 right-4 z-50">
+            <WalletButton />
+          </div>
         </WalletProvider>
       </body>
     </html>

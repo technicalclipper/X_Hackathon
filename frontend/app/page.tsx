@@ -20,7 +20,6 @@ import {
   Shield,
 } from "lucide-react";
 import useCanvasCursor from "@/hooks/useCanvasCursor";
-import { WalletButton } from "@/components/WalletButton";
 
 export default function Home() {
   const router = useRouter();
@@ -111,11 +110,6 @@ export default function Home() {
   return (
     <div className="min-h-screen overflow-hidden p-4 md:p-8 relative">
       <canvas className="pointer-events-none fixed inset-0" id="canvas" />
-      
-      {/* Wallet Button - Top Right */}
-      <div className="fixed top-4 right-4 z-50">
-        <WalletButton />
-      </div>
 
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Main Hero Section */}
