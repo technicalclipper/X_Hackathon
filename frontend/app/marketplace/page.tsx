@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft,
   Gavel,
@@ -40,11 +54,16 @@ import {
   Image as ImageIcon,
   Plus,
   Minus,
+  History,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useOwnedNFTs, OwnedNFT } from "@/hooks/database/useOwnedNFTs";
 import { useWallet } from "@/components/WalletProvider";
+import { useCreateAuction } from "@/hooks/contracts/useCreateAuction";
+import { useAuctions } from "@/hooks/database/useAuctions";
+import { useBidHistory } from "@/hooks/database/useBidHistory";
+import { usePlaceBid } from "@/hooks/contracts/usePlaceBid";
 
 interface NFTItem {
   id: string;
@@ -96,9 +115,45 @@ export default function NFTMarketplace() {
   const [listingPrice, setListingPrice] = useState("");
   const [biddingNft, setBiddingNft] = useState<string | null>(null);
   const [tempBidAmount, setTempBidAmount] = useState("");
+  const [listingNft, setListingNft] = useState<OwnedNFT | null>(null);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null);
 
   // Get wallet address from context
   const { userAddress, isConnected } = useWallet();
+
+  // Create auction hook
+  const {
+    tokenId,
+    setTokenId,
+    minBid,
+    setMinBid,
+    requiredPsgTokens,
+    setRequiredPsgTokens,
+    isCreating,
+    error: auctionError,
+    success: auctionSuccess,
+    txHash,
+    createAuction,
+    resetForm,
+  } = useCreateAuction();
+
+  // Auctions hook
+  const {
+    auctions,
+    filteredAuctions,
+    isLoading: auctionsLoading,
+    error: auctionsError,
+    searchTerm: auctionSearchTerm,
+    setSearchTerm: setAuctionSearchTerm,
+    filterType,
+    setFilterType,
+    refreshAuctions,
+    formatEther,
+    getPoolTypeLabel: getAuctionPoolTypeLabel,
+    getGatewayUrl: getAuctionGatewayUrl,
+  } = useAuctions();
 
   // Fetch owned NFTs
   const {
@@ -111,161 +166,56 @@ export default function NFTMarketplace() {
     refreshNFTs,
   } = useOwnedNFTs(userAddress);
 
-  const nftItems: NFTItem[] = [
-    {
-      id: "1",
-      title: "Neymar's Golden Moment",
-      creator: "FanArt_Master",
-      currentBid: "2.5 CHZ",
-      timeLeft: "2h 34m",
-      bidders: 12,
-      views: 1240,
-      likes: 89,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "legendary",
-      category: "moment",
-      tokenId: "PSG001",
-      highestBidder: "0x1234...5678",
-    },
-    {
-      id: "2",
-      title: "PSG Third Kit Design",
-      creator: "DesignGuru",
-      currentBid: "1.8 CHZ",
-      timeLeft: "4h 15m",
-      bidders: 6,
-      views: 856,
-      likes: 45,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "rare",
-      category: "kit",
-      tokenId: "PSG002",
-      highestBidder: "0x2345...6789",
-    },
-    {
-      id: "3",
-      title: "Parc des Princes Tifo",
-      creator: "TifoMaster",
-      currentBid: "3.2 CHZ",
-      timeLeft: "1h 45m",
-      bidders: 15,
-      views: 2100,
-      likes: 156,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "legendary",
-      category: "tifo",
-      tokenId: "PSG003",
-      highestBidder: "0xabcd...efgh",
-    },
-    {
-      id: "4",
-      title: "Messi Magic Poster",
-      creator: "ArtCollector",
-      currentBid: "0.9 CHZ",
-      timeLeft: "5h 30m",
-      bidders: 3,
-      views: 634,
-      likes: 32,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "common",
-      category: "poster",
-      tokenId: "PSG004",
-      highestBidder: "0x3456...7890",
-    },
-    {
-      id: "5",
-      title: "Champions League Glory",
-      creator: "PhotoPro",
-      currentBid: "4.1 CHZ",
-      timeLeft: "3h 12m",
-      bidders: 8,
-      views: 1876,
-      likes: 124,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "legendary",
-      category: "moment",
-      tokenId: "PSG005",
-      highestBidder: "0x9876...5432",
-    },
-    {
-      id: "6",
-      title: "Fan Art Collection",
-      creator: "CreativeGuru",
-      currentBid: "0.5 CHZ",
-      timeLeft: "7h 45m",
-      bidders: 2,
-      views: 423,
-      likes: 28,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "common",
-      category: "art",
-      tokenId: "PSG006",
-      highestBidder: "0x4567...8901",
-    },
-    {
-      id: "7",
-      title: "Mbappé Speed Boost",
-      creator: "SpeedMaster",
-      currentBid: "2.2 CHZ",
-      timeLeft: "12h 20m",
-      bidders: 9,
-      views: 890,
-      likes: 67,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "rare",
-      category: "moment",
-      tokenId: "PSG007",
-      highestBidder: "0x5678...9012",
-    },
-    {
-      id: "8",
-      title: "PSG Stadium Night",
-      creator: "PhotoArt",
-      currentBid: "1.5 CHZ",
-      timeLeft: "8h 10m",
-      bidders: 5,
-      views: 567,
-      likes: 43,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "common",
-      category: "art",
-      tokenId: "PSG008",
-      highestBidder: "0x6789...0123",
-    },
-    {
-      id: "9",
-      title: "Vintage PSG Badge",
-      creator: "RetroDesigner",
-      currentBid: "1.9 CHZ",
-      timeLeft: "6h 22m",
-      bidders: 7,
-      views: 1123,
-      likes: 85,
-      imageUrl: "/nft-placeholder.jpg",
-      club: "psg",
-      type: "auction",
-      rarity: "rare",
-      category: "art",
-      tokenId: "PSG009",
-      highestBidder: "0xdef0...1234",
-    },
-  ];
+  // Bid history hook
+  const {
+    bidHistory,
+    isLoading: bidHistoryLoading,
+    error: bidHistoryError,
+    formatDateString,
+    formatEther: formatEtherBid,
+    getTotalBids,
+    getHighestBid,
+    getAverageBid,
+    refreshBidHistory,
+  } = useBidHistory(selectedTokenId || undefined);
+
+  // Place bid hook
+  const {
+    tokenId: bidTokenId,
+    setTokenId: setBidTokenId,
+    bidAmount: bidAmountHook,
+    setBidAmount: setBidAmountHook,
+    isBidding,
+    error: bidError,
+    success: bidSuccess,
+    txHash: bidTxHash,
+    placeBid,
+    resetForm: resetBidForm,
+  } = usePlaceBid();
+
+  // Handle successful auction creation
+  useEffect(() => {
+    if (auctionSuccess) {
+      setListingNft(null);
+      setIsPopoverOpen(false);
+      refreshNFTs();
+      refreshAuctions(); // Also refresh auctions to show new listing
+      resetForm();
+    }
+  }, [auctionSuccess, refreshNFTs, refreshAuctions, resetForm]);
+
+  // Handle successful bid placement
+  useEffect(() => {
+    if (bidSuccess) {
+      setBiddingNft(null);
+      setTempBidAmount("");
+      refreshAuctions(); // Refresh auctions to show updated bid
+      refreshBidHistory(); // Refresh bid history if dialog is open
+      resetBidForm();
+    }
+  }, [bidSuccess, refreshAuctions, refreshBidHistory, resetBidForm]);
+
+  // Static NFT items replaced with real auction data from useAuctions hook
 
   const myNFTs: UserNFT[] = [
     {
@@ -348,15 +298,19 @@ export default function NFTMarketplace() {
       const newBidAmount = (currentBidValue * 1.1).toFixed(2);
       setTempBidAmount(newBidAmount);
       setBiddingNft(nft.id);
+
+      // Set token ID and bid amount in the bid hook
+      setBidTokenId(nft.id);
+      setBidAmountHook(newBidAmount);
     }
   };
 
-  const handleConfirmBid = (nftId: string) => {
-    const currentNft = nftItems.find((nft) => nft.id === nftId);
-    if (currentNft && currentNft.currentBid) {
-      const currentBidValue = parseFloat(
-        currentNft.currentBid.replace(/[^\d.]/g, "")
-      );
+  const handleConfirmBid = async (auctionTokenId: number) => {
+    const currentAuction = filteredAuctions.find(
+      (auction) => auction.token_id === auctionTokenId
+    );
+    if (currentAuction && currentAuction.highest_bid) {
+      const currentBidValue = formatEther(currentAuction.highest_bid);
       const newBidValue = parseFloat(tempBidAmount);
 
       if (newBidValue <= currentBidValue) {
@@ -365,28 +319,107 @@ export default function NFTMarketplace() {
       }
     }
 
-    // Here you would typically call your smart contract or API
-    console.log(`Placing bid of ${tempBidAmount} CHZ on NFT ${nftId}`);
-    // Reset bidding state
-    setBiddingNft(null);
-    setTempBidAmount("");
-    // You could show a success message or update the UI
+    // Validate minimum bid
+    if (currentAuction) {
+      const minBidValue = formatEther(currentAuction.min_bid);
+      const newBidValue = parseFloat(tempBidAmount);
+
+      if (newBidValue < minBidValue) {
+        alert(`Your bid must be at least ${minBidValue.toFixed(3)} CHZ!`);
+        return;
+      }
+    }
+
+    // Validate bid amount
+    if (!tempBidAmount || tempBidAmount.trim() === "") {
+      alert("Please enter a valid bid amount!");
+      return;
+    }
+
+    const bidValue = parseFloat(tempBidAmount);
+    if (isNaN(bidValue) || bidValue <= 0) {
+      alert("Please enter a valid bid amount!");
+      return;
+    }
+
+    // Ensure token ID and bid amount are properly set before placing bid
+    setBidTokenId(auctionTokenId.toString());
+    setBidAmountHook(tempBidAmount);
+
+    // Place the bid
+    await placeBid();
   };
 
   const handleCancelBid = () => {
     setBiddingNft(null);
     setTempBidAmount("");
+    resetBidForm(); // Reset the bid hook state
   };
 
-  const filteredNFTs = nftItems.filter((nft) => {
-    const matchesSearch = nft.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+  const handleStartListing = (nft: OwnedNFT) => {
+    setListingNft(nft);
+    resetForm(); // Reset first, then set values
+    setTokenId(nft.minted_token_id.toString());
+    setMinBid("");
+    setRequiredPsgTokens("");
+    setIsPopoverOpen(true);
+  };
+
+  const handleConfirmListing = async () => {
+    if (!listingNft) return;
+
+    // Basic validation - trim whitespace and check for valid values
+    const trimmedMinBid = minBid.trim();
+    const trimmedRequiredPsgTokens = requiredPsgTokens.trim();
+
+    if (!trimmedMinBid || !trimmedRequiredPsgTokens) {
+      return;
+    }
+
+    const minBidNum = parseFloat(trimmedMinBid);
+    const requiredPsgTokensNum = parseFloat(trimmedRequiredPsgTokens);
+
+    if (
+      isNaN(minBidNum) ||
+      minBidNum <= 0 ||
+      isNaN(requiredPsgTokensNum) ||
+      requiredPsgTokensNum <= 0
+    ) {
+      return;
+    }
+
+    await createAuction();
+  };
+
+  const handleCancelListing = () => {
+    setListingNft(null);
+    setIsPopoverOpen(false);
+    resetForm();
+  };
+
+  const handleOpenBidHistory = (tokenId: number) => {
+    setSelectedTokenId(tokenId);
+    setHistoryDialogOpen(true);
+  };
+
+  const handleCloseBidHistory = () => {
+    setHistoryDialogOpen(false);
+    setSelectedTokenId(null);
+  };
+
+  // Update search term in auctions hook when local search changes
+  useEffect(() => {
+    setAuctionSearchTerm(searchTerm);
+  }, [searchTerm, setAuctionSearchTerm]);
+
+  // Filter auctions based on UI filters (category, club, type)
+  const filteredNFTs = filteredAuctions.filter((auction) => {
     const matchesCategory =
-      selectedCategory === "all" || nft.category === selectedCategory;
-    const matchesClub = selectedClub === "all" || nft.club === selectedClub;
-    const matchesType = selectedType === "all" || nft.type === selectedType;
-    return matchesSearch && matchesCategory && matchesClub && matchesType;
+      selectedCategory === "all" ||
+      auction.pool_type.toLowerCase() === selectedCategory;
+    const matchesClub = selectedClub === "all"; // All auctions are PSG for now
+    const matchesType = selectedType === "all" || selectedType === "auction";
+    return matchesCategory && matchesClub && matchesType;
   });
 
   return (
@@ -594,134 +627,267 @@ export default function NFTMarketplace() {
               </Card>
             </div>
 
-            {/* NFT Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredNFTs.map((nft, index) => (
-                <motion.div
-                  key={nft.id}
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
-                >
-                  <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer h-[480px] flex flex-col overflow-hidden">
-                    <CardContent className="p-0 flex flex-col h-full">
-                      {/* NFT Image */}
-                      <div className="relative">
-                        <div className="h-48 bg-gray-200 border-b-4 border-black flex items-center justify-center">
-                          <ImageIcon className="w-16 h-16 text-gray-400" />
-                        </div>
+            {/* Auction Loading State */}
+            {auctionsLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-xl font-black text-black">
+                    LOADING AUCTIONS...
+                  </p>
+                </div>
+              </div>
+            )}
 
-                        {/* Type Badge */}
-                        <Badge className="absolute top-2 right-2 bg-red-500 text-white border-2 border-black font-black">
-                          AUCTION
-                        </Badge>
-                      </div>
+            {/* Auction Error State */}
+            {auctionsError && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="text-red-500 text-4xl font-black mb-4">
+                    ERROR
+                  </div>
+                  <p className="text-black font-bold mb-4">{auctionsError}</p>
+                  <Button
+                    onClick={refreshAuctions}
+                    className="bg-black text-white font-black border-2 border-border"
+                  >
+                    RETRY
+                  </Button>
+                </div>
+              </div>
+            )}
 
-                      {/* NFT Details */}
-                      <div className="p-4 pb-6 flex flex-col flex-grow">
-                        {/* Title and Button Row */}
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-black text-lg pr-2">
-                            {nft.title}
-                          </h3>
-                          {biddingNft === nft.id ? (
-                            <div className="flex items-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                              <Button
-                                onClick={handleCancelBid}
-                                className="bg-red-500 text-white border-2 border-black font-black h-8 px-2 text-xs hover:bg-red-600 transition-colors rounded-none border-r-0"
-                              >
-                                ✕
-                              </Button>
-                              <Input
-                                type="number"
-                                value={tempBidAmount}
-                                onChange={(e) =>
-                                  setTempBidAmount(e.target.value)
-                                }
-                                className="w-20 h-8 text-sm border-2 border-black font-black text-center rounded-none border-x-0"
-                                step="0.01"
-                              />
-                              <Button
-                                onClick={() => handleConfirmBid(nft.id)}
-                                className="bg-green-500 text-white border-2 border-black font-black h-8 px-2 text-xs hover:bg-green-600 transition-colors rounded-none border-l-0"
-                              >
-                                ✓
-                              </Button>
+            {/* Auction Grid */}
+            {!auctionsLoading && !auctionsError && (
+              <>
+                {filteredNFTs.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Gavel className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-xl font-black text-black mb-2">
+                        NO AUCTIONS FOUND
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        No active auctions match your search criteria.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredNFTs.map((auction, index) => (
+                      <motion.div
+                        key={auction.token_id}
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.1, duration: 0.6 }}
+                      >
+                        <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer h-[480px] flex flex-col overflow-hidden">
+                          <CardContent className="p-0 flex flex-col h-full">
+                            {/* NFT Image */}
+                            <div className="relative">
+                              <div className="h-48 bg-gray-200 border-b-4 border-black overflow-hidden">
+                                {auction.content_url ? (
+                                  <img
+                                    src={getAuctionGatewayUrl(
+                                      auction.content_url
+                                    )}
+                                    alt={`${
+                                      auction.match_id
+                                    } - ${getAuctionPoolTypeLabel(
+                                      auction.pool_type
+                                    )}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target =
+                                        e.target as HTMLImageElement;
+                                      target.style.display = "none";
+                                      const fallback =
+                                        target.nextElementSibling as HTMLElement;
+                                      if (fallback) {
+                                        fallback.style.display = "flex";
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <div
+                                  className={`absolute inset-0 flex items-center justify-center ${
+                                    auction.content_url ? "hidden" : ""
+                                  }`}
+                                >
+                                  <ImageIcon className="w-16 h-16 text-gray-400" />
+                                </div>
+                              </div>
+
+                              {/* Type Badge */}
+                              <Badge className="absolute top-2 right-2 bg-red-500 text-white border-2 border-black font-black">
+                                AUCTION
+                              </Badge>
                             </div>
-                          ) : (
-                            <Button
-                              onClick={() => handleStartBid(nft)}
-                              className="bg-main text-white border-2 border-black font-black py-1 px-3 text-sm hover:bg-gray-800 transition-colors rounded-none"
-                            >
-                              <Gavel className="w-3 h-3 mr-1" />
-                              PLACE BID
-                            </Button>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">
-                          by {nft.creator}
-                        </p>
 
-                        {/* NFT Info Fields */}
-                        <div className="mb-4 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-black text-gray-600">
-                              TOKEN ID
-                            </span>
-                            <span className="text-sm font-black">
-                              {nft.tokenId || nft.id}
-                            </span>
-                          </div>
+                            {/* Auction Details */}
+                            <div className="p-4 pb-6 flex flex-col flex-grow">
+                              {/* Title and Button Row */}
+                              <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-black text-lg pr-2">
+                                  {auction.match_id} -{" "}
+                                  {getAuctionPoolTypeLabel(auction.pool_type)}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    onClick={() =>
+                                      handleOpenBidHistory(auction.token_id)
+                                    }
+                                    className="bg-gray-200 text-black border-2 border-black font-black p-1 text-xs hover:bg-gray-300 transition-colors rounded-none"
+                                  >
+                                    <History className="w-3 h-3" />
+                                  </Button>
+                                  {biddingNft ===
+                                  auction.token_id.toString() ? (
+                                    <div className="flex items-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                      <Button
+                                        onClick={handleCancelBid}
+                                        className="bg-red-500 text-white border-2 border-black font-black h-8 px-2 text-xs hover:bg-red-600 transition-colors rounded-none border-r-0"
+                                      >
+                                        ✕
+                                      </Button>
+                                      <Input
+                                        type="number"
+                                        value={tempBidAmount}
+                                        onChange={(e) => {
+                                          setTempBidAmount(e.target.value);
+                                          setBidAmountHook(e.target.value);
+                                        }}
+                                        className="w-20 h-8 text-sm border-2 border-black font-black text-center rounded-none border-x-0"
+                                        step="0.01"
+                                      />
+                                      <Button
+                                        onClick={() =>
+                                          handleConfirmBid(auction.token_id)
+                                        }
+                                        disabled={isBidding}
+                                        className="bg-green-500 text-white border-2 border-black font-black h-8 px-2 text-xs hover:bg-green-600 transition-colors rounded-none border-l-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isBidding ? "..." : "✓"}
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      onClick={() =>
+                                        handleStartBid({
+                                          id: auction.token_id.toString(),
+                                          currentBid: auction.highest_bid
+                                            ? `${formatEther(
+                                                auction.highest_bid
+                                              ).toFixed(3)} CHZ`
+                                            : `${formatEther(
+                                                auction.min_bid
+                                              ).toFixed(3)} CHZ`,
+                                        } as NFTItem)
+                                      }
+                                      className="bg-main text-white border-2 border-black font-black py-1 px-3 text-sm hover:bg-gray-800 transition-colors rounded-none"
+                                    >
+                                      <Gavel className="w-3 h-3 mr-1" />
+                                      PLACE BID
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">
+                                by {auction.creator_address.slice(0, 6)}...
+                                {auction.creator_address.slice(-4)}
+                              </p>
 
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-black text-gray-600">
-                              HIGHEST BIDDER
-                            </span>
-                            <span className="text-sm font-black">
-                              {nft.highestBidder || "0x0000...0000"}
-                            </span>
-                          </div>
+                              {/* Auction Info Fields */}
+                              <div className="mb-4 space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-black text-gray-600">
+                                    TOKEN ID
+                                  </span>
+                                  <span className="text-sm font-black">
+                                    {auction.token_id}
+                                  </span>
+                                </div>
 
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-black text-gray-600">
-                              CURRENT BID
-                            </span>
-                            <span className="text-lg font-black">
-                              {nft.currentBid}
-                            </span>
-                          </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-black text-gray-600">
+                                    HIGHEST BIDDER
+                                  </span>
+                                  <span className="text-sm font-black">
+                                    {auction.highest_bidder_address
+                                      ? `${auction.highest_bidder_address.slice(
+                                          0,
+                                          6
+                                        )}...${auction.highest_bidder_address.slice(
+                                          -4
+                                        )}`
+                                      : "No bids yet"}
+                                  </span>
+                                </div>
 
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-black text-gray-600">
-                              TIME LEFT
-                            </span>
-                            <span className="text-sm font-black text-red-500">
-                              {nft.timeLeft}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Stats */}
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm font-black text-gray-600">
-                              {nft.views}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Heart className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm font-black text-gray-600">
-                              {nft.likes}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Action Button - Always at bottom and inside card */}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-black text-gray-600">
+                                    CURRENT BID
+                                  </span>
+                                  <span className="text-lg font-black">
+                                    {auction.highest_bid
+                                      ? `${formatEther(
+                                          auction.highest_bid
+                                        ).toFixed(3)} CHZ`
+                                      : `${formatEther(auction.min_bid).toFixed(
+                                          3
+                                        )} CHZ`}
+                                  </span>
+                                </div>
+
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-black text-gray-600">
+                                    MIN BID
+                                  </span>
+                                  <span className="text-sm font-black">
+                                    {formatEther(auction.min_bid).toFixed(3)}{" "}
+                                    CHZ
+                                  </span>
+                                </div>
+
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-black text-gray-600">
+                                    VOTES
+                                  </span>
+                                  <span className="text-sm font-black">
+                                    {auction.vote_count}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Bidding Status Messages */}
+                              {biddingNft === auction.token_id.toString() && (
+                                <div className="mt-2 space-y-1">
+                                  {bidError && (
+                                    <div className="text-xs font-black text-red-500 bg-red-50 p-2 border border-red-200 rounded">
+                                      {bidError}
+                                    </div>
+                                  )}
+                                  {bidSuccess && (
+                                    <div className="text-xs font-black text-green-500 bg-green-50 p-2 border border-green-200 rounded">
+                                      {bidSuccess}
+                                    </div>
+                                  )}
+                                  {bidTxHash && (
+                                    <div className="text-xs font-black text-blue-500 bg-blue-50 p-2 border border-blue-200 rounded">
+                                      TX: {bidTxHash.slice(0, 10)}...
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </motion.div>
         )}
 
@@ -885,14 +1051,145 @@ export default function NFTMarketplace() {
 
                               {/* Action Buttons - Always at bottom */}
                               <div className="flex gap-2 mt-auto">
-                                <Button className="flex-1 bg-green-500 text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
-                                  <Plus className="w-4 h-4 mr-2" />
-                                  LIST FOR SALE
-                                </Button>
-                                <Button className="flex-1 bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black">
-                                  <Gavel className="w-4 h-4 mr-2" />
-                                  AUCTION
-                                </Button>
+                                <Popover
+                                  open={
+                                    isPopoverOpen && listingNft?.id === nft.id
+                                  }
+                                  onOpenChange={(open) => {
+                                    if (!open) {
+                                      handleCancelListing();
+                                    }
+                                  }}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      onClick={() => handleStartListing(nft)}
+                                      className="flex-1 bg-green-500 text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black"
+                                    >
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      LIST FOR SALE
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80 text-main-foreground">
+                                    <div className="grid gap-4">
+                                      <div className="space-y-2">
+                                        <h4 className="font-black leading-none">
+                                          CREATE AUCTION
+                                        </h4>
+                                        <p className="text-sm">
+                                          Set the auction parameters for your
+                                          NFT.
+                                        </p>
+                                      </div>
+                                      <div className="grid gap-3">
+                                        <div className="grid grid-cols-3 items-center gap-4">
+                                          <Label
+                                            htmlFor="token-id"
+                                            className="font-black"
+                                          >
+                                            Token ID
+                                          </Label>
+                                          <Input
+                                            id="token-id"
+                                            value={tokenId}
+                                            disabled
+                                            className="col-span-2 h-8 bg-gray-100 font-black"
+                                          />
+                                        </div>
+                                        <div className="grid grid-cols-3 items-center gap-4">
+                                          <Label
+                                            htmlFor="min-bid"
+                                            className="font-black"
+                                          >
+                                            Min Bid (CHZ)
+                                          </Label>
+                                          <Input
+                                            id="min-bid"
+                                            type="number"
+                                            value={minBid}
+                                            onChange={(e) =>
+                                              setMinBid(e.target.value)
+                                            }
+                                            placeholder="0.01"
+                                            className="col-span-2 h-8 font-black"
+                                            step="0.01"
+                                            min="0"
+                                          />
+                                        </div>
+                                        <div className="grid grid-cols-3 items-center gap-4">
+                                          <Label
+                                            htmlFor="psg-tokens"
+                                            className="font-black"
+                                          >
+                                            PSG Tokens
+                                          </Label>
+                                          <Input
+                                            id="psg-tokens"
+                                            type="number"
+                                            value={requiredPsgTokens}
+                                            onChange={(e) =>
+                                              setRequiredPsgTokens(
+                                                e.target.value
+                                              )
+                                            }
+                                            placeholder="100"
+                                            className="col-span-2 h-8 font-black"
+                                            step="0.01"
+                                            min="0"
+                                          />
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <Button
+                                            onClick={handleCancelListing}
+                                            className="flex-1 bg-gray-100 text-black border-2 border-black font-black hover:bg-gray-200 transition-colors"
+                                          >
+                                            CANCEL
+                                          </Button>
+                                          <Button
+                                            onClick={handleConfirmListing}
+                                            disabled={
+                                              isCreating ||
+                                              !minBid.trim() ||
+                                              !requiredPsgTokens.trim() ||
+                                              isNaN(
+                                                parseFloat(minBid.trim())
+                                              ) ||
+                                              parseFloat(minBid.trim()) <= 0 ||
+                                              isNaN(
+                                                parseFloat(
+                                                  requiredPsgTokens.trim()
+                                                )
+                                              ) ||
+                                              parseFloat(
+                                                requiredPsgTokens.trim()
+                                              ) <= 0
+                                            }
+                                            className="flex-1 bg-green-500 text-white border-2 border-black font-black hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                          >
+                                            {isCreating
+                                              ? "CREATING..."
+                                              : "CREATE AUCTION"}
+                                          </Button>
+                                        </div>
+                                        {auctionError && (
+                                          <p className="text-red-500 text-xs font-black">
+                                            {auctionError}
+                                          </p>
+                                        )}
+                                        {auctionSuccess && (
+                                          <p className="text-green-500 text-xs font-black">
+                                            {auctionSuccess}
+                                          </p>
+                                        )}
+                                        {txHash && (
+                                          <p className="text-blue-500 text-xs font-black">
+                                            TX: {txHash.slice(0, 10)}...
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                             </div>
                           </CardContent>
@@ -1142,6 +1439,147 @@ export default function NFTMarketplace() {
           </motion.div>
         )}
       </div>
+
+      {/* Bid History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">
+              BID HISTORY - TOKEN #{selectedTokenId}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              View all bids placed on this auction
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {bidHistoryLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-sm font-black text-black">
+                    LOADING HISTORY...
+                  </p>
+                </div>
+              </div>
+            ) : bidHistoryError ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-red-500 text-xl font-black mb-2">
+                    ERROR
+                  </div>
+                  <p className="text-sm text-black">{bidHistoryError}</p>
+                  <Button
+                    onClick={refreshBidHistory}
+                    className="mt-4 bg-black text-white font-black border-2 border-black"
+                  >
+                    RETRY
+                  </Button>
+                </div>
+              </div>
+            ) : bidHistory.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg font-black text-black mb-2">
+                    NO BIDS YET
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    This auction hasn't received any bids yet.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Bid Statistics */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gray-100 p-3 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-black">
+                        {getTotalBids()}
+                      </div>
+                      <div className="text-sm font-black text-gray-600">
+                        TOTAL BIDS
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-100 p-3 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-black">
+                        {getHighestBid()
+                          ? formatEtherBid(getHighestBid()!.amount).toFixed(3)
+                          : "0"}
+                      </div>
+                      <div className="text-sm font-black text-gray-600">
+                        HIGHEST BID
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-100 p-3 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-black">
+                        {getAverageBid()
+                          ? formatEtherBid(getAverageBid().toString()).toFixed(
+                              3
+                            )
+                          : "0"}
+                      </div>
+                      <div className="text-sm font-black text-gray-600">
+                        AVERAGE BID
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bid History List */}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {bidHistory.map((bid, index) => (
+                    <div
+                      key={bid.id}
+                      className={`p-4 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                        index === 0 ? "bg-green-50" : "bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full border-2 border-black flex items-center justify-center font-black text-xs ${
+                              index === 0
+                                ? "bg-green-500 text-white"
+                                : "bg-gray-200 text-black"
+                            }`}
+                          >
+                            {index === 0 ? "1st" : `${index + 1}`}
+                          </div>
+                          <div>
+                            <p className="font-black text-black">
+                              {bid.bidder_address.slice(0, 6)}...
+                              {bid.bidder_address.slice(-4)}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {formatDateString(bid.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-black text-black">
+                            {formatEtherBid(bid.amount).toFixed(3)} CHZ
+                          </p>
+                          {index === 0 && (
+                            <Badge className="bg-green-500 text-white border-2 border-black font-black text-xs">
+                              LEADING BID
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
