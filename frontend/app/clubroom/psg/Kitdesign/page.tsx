@@ -47,104 +47,21 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { usePools, Pool } from "@/hooks/database/usePools";
+import { useSubmissions, Submission } from "@/hooks/database/useSubmissions";
 
-interface KitSubmission {
-  id: string;
-  title: string;
-  imageUrl: string;
-  author: string;
-  votes: number;
-  userVote: "up" | "down" | null;
-  submittedAt: string;
-  views: number;
-}
+// Using Submission interface from useSubmissions hook
 
 export default function KitDesignPage() {
   const router = useRouter();
   const { pools, isLoading, error, getPoolsByType } = usePools();
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
-  const [submissions, setSubmissions] = useState<KitSubmission[]>([
-    {
-      id: "1",
-      title: "PSG Third Kit - Neon Dreams",
-      imageUrl: "/kit-designs/neon-dreams.jpg",
-      author: "DesignMaster_PSG",
-      votes: 127,
-      userVote: null,
-      submittedAt: "2 hours ago",
-      views: 342,
-    },
-    {
-      id: "2",
-      title: "Classic Blue Elegance",
-      imageUrl: "/kit-designs/classic-blue.jpg",
-      author: "RetroDesigner",
-      votes: 89,
-      userVote: "up",
-      submittedAt: "5 hours ago",
-      views: 256,
-    },
-    {
-      id: "3",
-      title: "Parisian Night Sky",
-      imageUrl: "/kit-designs/night-sky.jpg",
-      author: "ParisianArtist",
-      votes: 156,
-      userVote: null,
-      submittedAt: "1 day ago",
-      views: 478,
-    },
-    {
-      id: "4",
-      title: "Minimalist Approach",
-      imageUrl: "/kit-designs/minimalist.jpg",
-      author: "CleanDesigns",
-      votes: 73,
-      userVote: null,
-      submittedAt: "1 day ago",
-      views: 189,
-    },
-    {
-      id: "5",
-      title: "Retro Inspired Kit",
-      imageUrl: "/kit-designs/retro.jpg",
-      author: "VintageVibes",
-      votes: 45,
-      userVote: "down",
-      submittedAt: "2 days ago",
-      views: 134,
-    },
-    {
-      id: "6",
-      title: "Geometric Patterns",
-      imageUrl: "/kit-designs/geometric.jpg",
-      author: "ModernArt_PSG",
-      votes: 92,
-      userVote: null,
-      submittedAt: "2 days ago",
-      views: 203,
-    },
-    {
-      id: "7",
-      title: "Eiffel Tower Tribute",
-      imageUrl: "/kit-designs/eiffel.jpg",
-      author: "ParisLover",
-      votes: 234,
-      userVote: "up",
-      submittedAt: "3 days ago",
-      views: 567,
-    },
-    {
-      id: "8",
-      title: "Galaxy Theme",
-      imageUrl: "/kit-designs/galaxy.jpg",
-      author: "SpaceDesigner",
-      votes: 67,
-      userVote: null,
-      submittedAt: "3 days ago",
-      views: 145,
-    },
-  ]);
+  const {
+    submissions,
+    isLoading: submissionsLoading,
+    error: submissionsError,
+    refreshSubmissions,
+    getGatewayUrl,
+  } = useSubmissions(selectedPool?.id);
 
   const [sortBy, setSortBy] = useState<"votes" | "recent" | "views">("votes");
 
@@ -178,60 +95,24 @@ export default function KitDesignPage() {
     return { phase: "ENDED", color: "bg-red-400" };
   };
 
-  const handleVote = (submissionId: string, voteType: "up" | "down") => {
+  // Note: Voting functionality would need to be connected to the database
+  // For now, this is just a placeholder for UI demonstration
+  const handleVote = (submissionId: number, voteType: "up" | "down") => {
     console.log(`Voting ${voteType} for submission ${submissionId}`);
-    setSubmissions((prevSubmissions) =>
-      prevSubmissions.map((submission) => {
-        if (submission.id === submissionId) {
-          let newVotes = submission.votes;
-          let newUserVote: "up" | "down" | null = voteType;
-
-          // Remove previous vote if exists
-          if (submission.userVote === "up") {
-            newVotes -= 1;
-          } else if (submission.userVote === "down") {
-            newVotes += 1;
-          }
-
-          // Apply new vote
-          if (voteType === "up") {
-            newVotes += 1;
-          } else if (voteType === "down") {
-            newVotes -= 1;
-          }
-
-          // If clicking the same vote type, remove the vote
-          if (submission.userVote === voteType) {
-            newUserVote = null;
-            if (voteType === "up") {
-              newVotes -= 1;
-            } else {
-              newVotes += 1;
-            }
-          }
-
-          console.log(
-            `Updated votes for ${submissionId}: ${newVotes}, userVote: ${newUserVote}`
-          );
-          return {
-            ...submission,
-            votes: newVotes,
-            userVote: newUserVote,
-          };
-        }
-        return submission;
-      })
-    );
+    // TODO: Connect to voting system/database
   };
 
   const sortedSubmissions = [...submissions].sort((a, b) => {
     switch (sortBy) {
       case "votes":
-        return b.votes - a.votes;
+        return b.vote_count - a.vote_count;
       case "recent":
-        return submissions.indexOf(a) - submissions.indexOf(b);
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       case "views":
-        return b.views - a.views;
+        // Views not available in database, fallback to vote_count
+        return b.vote_count - a.vote_count;
       default:
         return 0;
     }
@@ -294,7 +175,7 @@ export default function KitDesignPage() {
       <div className="relative z-10 min-h-screen p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Loading State */}
-          {isLoading && (
+          {(isLoading || submissionsLoading) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -312,7 +193,7 @@ export default function KitDesignPage() {
           )}
 
           {/* Error State */}
-          {error && (
+          {(error || submissionsError) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -323,7 +204,9 @@ export default function KitDesignPage() {
                   <div className="text-red-500 text-4xl font-black mb-4">
                     ERROR
                   </div>
-                  <p className="text-black font-bold">{error}</p>
+                  <p className="text-black font-bold">
+                    {error || submissionsError}
+                  </p>
                   <Button
                     onClick={() => window.location.reload()}
                     className="mt-4 bg-black text-white font-black border-2 border-border"
@@ -336,7 +219,7 @@ export default function KitDesignPage() {
           )}
 
           {/* Main Content */}
-          {!isLoading && !error && (
+          {!isLoading && !submissionsLoading && !error && !submissionsError && (
             <>
               {/* Header */}
               <motion.div
@@ -485,7 +368,10 @@ export default function KitDesignPage() {
                           </div>
                           <div className="bg-purple-400 text-black px-3 py-2 border-2 border-border font-black text-sm">
                             <Users className="w-4 h-4 mr-2 inline" />
-                            <span>234 SUBMISSIONS</span>
+                            <span>
+                              {submissionsLoading ? "..." : submissions.length}{" "}
+                              SUBMISSIONS
+                            </span>
                           </div>
                           {selectedPool && (
                             <div
@@ -516,8 +402,22 @@ export default function KitDesignPage() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {[
-                    { label: "Total Submissions", value: "234", icon: Upload },
-                    { label: "Total Votes", value: "1,247", icon: Trophy },
+                    {
+                      label: "Total Submissions",
+                      value: submissionsLoading
+                        ? "..."
+                        : submissions.length.toString(),
+                      icon: Upload,
+                    },
+                    {
+                      label: "Total Votes",
+                      value: submissionsLoading
+                        ? "..."
+                        : submissions
+                            .reduce((sum, s) => sum + s.vote_count, 0)
+                            .toString(),
+                      icon: Trophy,
+                    },
                     {
                       label: "Submission Phase",
                       value: selectedPool
@@ -856,11 +756,7 @@ export default function KitDesignPage() {
                                 <Button
                                   variant="noShadow"
                                   size="sm"
-                                  className={`p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 ${
-                                    submission.userVote === "up"
-                                      ? "bg-green-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                      : "text-gray-600 hover:bg-green-200 active:bg-green-300 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                                  }`}
+                                  className="p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 text-gray-600 hover:bg-green-200 active:bg-green-300 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
                                   onClick={() =>
                                     handleVote(submission.id, "up")
                                   }
@@ -869,17 +765,13 @@ export default function KitDesignPage() {
                                 </Button>
 
                                 <span className="text-xl font-black text-black my-2 select-none">
-                                  {submission.votes}
+                                  {submission.vote_count}
                                 </span>
 
                                 <Button
                                   variant="noShadow"
                                   size="sm"
-                                  className={`p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 ${
-                                    submission.userVote === "down"
-                                      ? "bg-red-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                      : "text-gray-600 hover:bg-red-200 active:bg-red-300 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                                  }`}
+                                  className="p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 text-gray-600 hover:bg-red-200 active:bg-red-300 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
                                   onClick={() =>
                                     handleVote(submission.id, "down")
                                   }
@@ -893,14 +785,25 @@ export default function KitDesignPage() {
                                 <div className="flex items-start justify-between mb-4">
                                   <div>
                                     <h3 className="text-xl font-black text-black mb-2">
-                                      {submission.title}
+                                      Submission #{submission.id}
                                     </h3>
                                     <div className="flex items-center gap-4 text-gray-600 text-sm font-bold">
-                                      <span>by {submission.author}</span>
-                                      <span>{submission.submittedAt}</span>
+                                      <span>
+                                        by{" "}
+                                        {submission.creator_address.slice(0, 6)}
+                                        ...
+                                        {submission.creator_address.slice(-4)}
+                                      </span>
+                                      <span>
+                                        {new Date(
+                                          submission.created_at
+                                        ).toLocaleDateString()}
+                                      </span>
                                       <div className="flex items-center gap-1">
-                                        <Eye className="w-4 h-4" />
-                                        <span>{submission.views}</span>
+                                        <Trophy className="w-4 h-4" />
+                                        <span>
+                                          {submission.vote_count} votes
+                                        </span>
                                       </div>
                                     </div>
                                   </div>
@@ -922,16 +825,75 @@ export default function KitDesignPage() {
                                 </div>
 
                                 {/* Kit Design Image */}
-                                <div className="bg-gray-100 border-4 border-black rounded-lg p-4 h-48 flex items-center justify-center">
-                                  <div className="text-gray-500 text-center">
-                                    <Upload className="w-12 h-12 mx-auto mb-2" />
-                                    <p className="font-bold">
-                                      Kit Design Image
-                                    </p>
-                                    <p className="text-sm">
-                                      ({submission.title})
-                                    </p>
-                                  </div>
+                                <div className="bg-gray-100 border-4 border-black rounded-lg overflow-hidden h-48 relative">
+                                  {submission.content_url ? (
+                                    <>
+                                      <img
+                                        src={getGatewayUrl(
+                                          submission.content_url
+                                        )}
+                                        alt={`Submission #${submission.id}`}
+                                        className="w-full h-full object-cover"
+                                        onLoad={() => {
+                                          console.log(
+                                            "Image loaded successfully:",
+                                            submission.content_url
+                                          );
+                                        }}
+                                        onError={(e) => {
+                                          console.log(
+                                            "Image failed to load:",
+                                            submission.content_url
+                                          );
+                                          const target =
+                                            e.target as HTMLImageElement;
+                                          target.style.display = "none";
+                                          const fallback =
+                                            target.parentElement?.querySelector(
+                                              ".image-fallback"
+                                            ) as HTMLElement;
+                                          if (fallback) {
+                                            fallback.style.display = "flex";
+                                          }
+                                        }}
+                                      />
+                                      <div
+                                        className="image-fallback absolute inset-0 flex items-center justify-center text-gray-500 text-center"
+                                        style={{ display: "none" }}
+                                      >
+                                        <div>
+                                          <Upload className="w-12 h-12 mx-auto mb-2" />
+                                          <p className="font-bold">
+                                            Failed to Load Image
+                                          </p>
+                                          <p className="text-xs">
+                                            URL:{" "}
+                                            {submission.content_url.slice(
+                                              0,
+                                              30
+                                            )}
+                                            ...
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full text-gray-500 text-center">
+                                      <div>
+                                        <Upload className="w-12 h-12 mx-auto mb-2" />
+                                        <p className="font-bold">
+                                          No Image Available
+                                        </p>
+                                        <p className="text-sm">
+                                          (Submission #{submission.id})
+                                        </p>
+                                        <p className="text-xs text-red-500">
+                                          content_url:{" "}
+                                          {submission.content_url || "null"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
