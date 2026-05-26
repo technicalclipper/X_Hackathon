@@ -990,11 +990,6 @@ export default function TShirtEditor3D() {
                       <Download className="w-4 h-4 mr-2 inline" />
                       Export
                     </button>
-
-                    <div className="bg-yellow-400 text-black px-3 py-2 border-2 border-black font-black text-sm">
-                      <Coins className="w-4 h-4 mr-2 inline" />
-                      125 TOKENS
-                    </div>
                   </div>
                 </div>
               </div>

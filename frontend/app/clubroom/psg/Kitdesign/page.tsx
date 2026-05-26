@@ -292,7 +292,6 @@ export default function KitDesignPage() {
 
                           <div className="flex items-center gap-2 bg-main text-black px-3 py-2 border-2 border-border font-black text-sm">
                             <Coins className="w-4 h-4" />
-                            <span>125 TOKENS</span>
                           </div>
                         </div>
                       </div>
