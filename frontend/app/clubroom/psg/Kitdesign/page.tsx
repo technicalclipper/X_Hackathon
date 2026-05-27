@@ -48,6 +48,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { usePools, Pool } from "@/hooks/database/usePools";
 import { useSubmissions, Submission } from "@/hooks/database/useSubmissions";
+import { useVote } from "@/hooks/contracts/useVote";
+import { useVoteCounts } from "@/hooks/database/useVoteCounts";
+import { useWallet } from "@/components/WalletProvider";
 
 // Using Submission interface from useSubmissions hook
 
@@ -65,6 +68,37 @@ export default function KitDesignPage() {
 
   const [sortBy, setSortBy] = useState<"votes" | "recent" | "views">("votes");
 
+  // Wallet connection
+  const { isConnected, userAddress } = useWallet();
+
+  // Voting hooks
+  const {
+    isVoting,
+    error: voteError,
+    success: voteSuccess,
+    txHash,
+    vote,
+    userPsgBalance,
+  } = useVote();
+
+  const {
+    voteCounts,
+    isLoading: voteCountsLoading,
+    error: voteCountsError,
+    getVoteCount,
+    hasUserVoted,
+    hasUserVotedInPool,
+    refreshVoteCounts,
+  } = useVoteCounts(selectedPool?.id);
+
+  // State to track voting status for each submission
+  const [votingSubmission, setVotingSubmission] = useState<number | null>(null);
+  const [userVotedInPool, setUserVotedInPool] = useState<boolean>(false);
+  const [submissionVoteStatus, setSubmissionVoteStatus] = useState<
+    Record<number, boolean>
+  >({});
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
   // Get jersey pools
   const jerseyPools = getPoolsByType("JERSEY");
 
@@ -74,6 +108,105 @@ export default function KitDesignPage() {
       setSelectedPool(jerseyPools[0]);
     }
   }, [jerseyPools, selectedPool]);
+
+  // Check if user has voted in the current pool
+  useEffect(() => {
+    const checkUserVotedInPool = async () => {
+      if (selectedPool && userAddress && isConnected) {
+        try {
+          // Add a small delay to prevent rapid-fire requests
+          await new Promise((resolve) => setTimeout(resolve, 150));
+          const hasVoted = await hasUserVotedInPool(
+            selectedPool.id,
+            userAddress
+          );
+          setUserVotedInPool(hasVoted);
+        } catch (error) {
+          console.error("Error checking user vote in pool:", error);
+          setUserVotedInPool(false);
+        }
+      } else {
+        setUserVotedInPool(false);
+      }
+    };
+
+    // Debounce the check to prevent rapid calls
+    const timeoutId = setTimeout(() => {
+      checkUserVotedInPool();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedPool?.id, userAddress, isConnected]); // Remove hasUserVotedInPool from dependencies
+
+  // Check voting status for each submission
+  useEffect(() => {
+    const checkSubmissionVoteStatus = async () => {
+      if (submissions.length > 0 && userAddress && isConnected) {
+        try {
+          const statusMap: Record<number, boolean> = {};
+
+          // Add a small delay to prevent rapid-fire requests
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          for (const submission of submissions) {
+            const hasVoted = await hasUserVoted(submission.id, userAddress);
+            statusMap[submission.id] = hasVoted;
+            // Small delay between requests to prevent overwhelming the server
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+
+          setSubmissionVoteStatus(statusMap);
+        } catch (error) {
+          console.error("Error checking submission vote status:", error);
+          setSubmissionVoteStatus({});
+        }
+      } else {
+        setSubmissionVoteStatus({});
+      }
+    };
+
+    // Debounce the check to prevent rapid calls
+    const timeoutId = setTimeout(() => {
+      if (submissions.length > 0 && userAddress && isConnected) {
+        checkSubmissionVoteStatus();
+      }
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, [submissions.length, userAddress, isConnected]); // Remove hasUserVoted and use submissions.length instead
+
+  // Handle successful voting
+  useEffect(() => {
+    if (voteSuccess && !isRefreshing) {
+      setIsRefreshing(true);
+
+      const handleSuccessfulVote = async () => {
+        try {
+          // Refresh submissions to get updated vote counts
+          await refreshSubmissions();
+          // Refresh vote counts
+          refreshVoteCounts();
+          // Reset voting state
+          setVotingSubmission(null);
+          // Re-check user voting status
+          if (selectedPool && userAddress && isConnected) {
+            const hasVoted = await hasUserVotedInPool(
+              selectedPool.id,
+              userAddress
+            );
+            setUserVotedInPool(hasVoted);
+          }
+        } catch (error) {
+          console.error("Error refreshing after vote:", error);
+        } finally {
+          setIsRefreshing(false);
+        }
+      };
+
+      // Add a delay to allow blockchain state to settle
+      setTimeout(handleSuccessfulVote, 1000);
+    }
+  }, [voteSuccess, isRefreshing]); // Include isRefreshing to prevent duplicate calls
 
   const handlePoolSelect = (poolId: string) => {
     const pool = jerseyPools.find((p) => p.id.toString() === poolId);
@@ -95,11 +228,78 @@ export default function KitDesignPage() {
     return { phase: "ENDED", color: "bg-red-400" };
   };
 
-  // Note: Voting functionality would need to be connected to the database
-  // For now, this is just a placeholder for UI demonstration
-  const handleVote = (submissionId: number, voteType: "up" | "down") => {
-    console.log(`Voting ${voteType} for submission ${submissionId}`);
-    // TODO: Connect to voting system/database
+  // Handle voting
+  const handleVote = async (
+    submission: Submission,
+    voteType: "up" | "down"
+  ) => {
+    // Only allow upvoting for now (as per smart contract)
+    if (voteType === "down") {
+      console.log("Downvoting not supported by smart contract");
+      return;
+    }
+
+    // Check if user is connected
+    if (!isConnected || !userAddress) {
+      console.log("Please connect your wallet to vote");
+      return;
+    }
+
+    // Check if pool is selected
+    if (!selectedPool) {
+      console.log("No pool selected");
+      return;
+    }
+
+    // Check if user has already voted in this pool
+    if (userVotedInPool) {
+      console.log("You have already voted in this pool");
+      return;
+    }
+
+    // Check if user has enough PSG tokens
+    if (parseFloat(userPsgBalance) < 10) {
+      console.log(
+        `You need at least 10 PSG tokens to vote. Current balance: ${userPsgBalance}`
+      );
+      return;
+    }
+
+    // Check if submission has contract_submission_id
+    if (
+      submission.contract_submission_id === null ||
+      submission.contract_submission_id === undefined
+    ) {
+      console.log("This submission doesn't have a contract submission ID");
+      return;
+    }
+
+    // Check if voting is currently allowed (after submission deadline, before voting deadline)
+    const now = Date.now();
+    const submissionDeadline = selectedPool.submission_deadline * 1000;
+    const votingDeadline = selectedPool.voting_deadline * 1000;
+
+    if (now < submissionDeadline) {
+      console.log("Voting period hasn't started yet");
+      return;
+    }
+
+    if (now > votingDeadline) {
+      console.log("Voting period has ended");
+      return;
+    }
+
+    try {
+      setVotingSubmission(submission.id);
+
+      // Call the vote function with poolId and contractSubmissionId
+      await vote(selectedPool.id, submission.contract_submission_id);
+
+      console.log(`Successfully voted for submission ${submission.id}`);
+    } catch (error) {
+      console.error("Error voting:", error);
+      setVotingSubmission(null);
+    }
   };
 
   const sortedSubmissions = [...submissions].sort((a, b) => {
@@ -292,7 +492,20 @@ export default function KitDesignPage() {
 
                           <div className="flex items-center gap-2 bg-main text-black px-3 py-2 border-2 border-border font-black text-sm">
                             <Coins className="w-4 h-4" />
+                            <span>{userPsgBalance} PSG</span>
                           </div>
+                          {isConnected && (
+                            <div
+                              className={`flex items-center gap-2 px-3 py-2 border-2 border-border font-black text-sm ${
+                                userVotedInPool ? "bg-green-400" : "bg-blue-400"
+                              } text-black`}
+                            >
+                              <Trophy className="w-4 h-4" />
+                              <span>
+                                {userVotedInPool ? "VOTED" : "CAN VOTE"}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -391,6 +604,40 @@ export default function KitDesignPage() {
                   </CardHeader>
                 </Card>
               </motion.div>
+
+              {/* Voting Status Messages */}
+              {(voteError || voteSuccess) && (
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.15 }}
+                  className="mb-8"
+                >
+                  <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4">
+                    {voteError && (
+                      <div className="flex items-center gap-3 text-red-500 font-black">
+                        <div className="w-6 h-6 bg-red-500 border-2 border-black flex items-center justify-center">
+                          <span className="text-white text-sm">!</span>
+                        </div>
+                        <span>VOTING ERROR: {voteError}</span>
+                      </div>
+                    )}
+                    {voteSuccess && (
+                      <div className="flex items-center gap-3 text-green-500 font-black">
+                        <div className="w-6 h-6 bg-green-500 border-2 border-black flex items-center justify-center">
+                          <span className="text-white text-sm">✓</span>
+                        </div>
+                        <span>VOTING SUCCESS: {voteSuccess}</span>
+                        {txHash && (
+                          <span className="text-blue-500 text-sm">
+                            TX: {txHash.slice(0, 10)}...
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
+              )}
 
               {/* Stats Overview */}
               <motion.div
@@ -752,31 +999,84 @@ export default function KitDesignPage() {
                             <div className="flex">
                               {/* Vote Section */}
                               <div className="flex flex-col items-center justify-center bg-gray-100 border-r-4 border-black p-4 min-w-[80px]">
+                                {/* Vote Up Button */}
                                 <Button
                                   variant="noShadow"
                                   size="sm"
-                                  className="p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 text-gray-600 hover:bg-green-200 active:bg-green-300 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                                  onClick={() =>
-                                    handleVote(submission.id, "up")
+                                  disabled={
+                                    !isConnected ||
+                                    userVotedInPool ||
+                                    isVoting ||
+                                    votingSubmission === submission.id ||
+                                    !selectedPool ||
+                                    Date.now() <
+                                      selectedPool.submission_deadline * 1000 ||
+                                    Date.now() >
+                                      selectedPool.voting_deadline * 1000 ||
+                                    parseFloat(userPsgBalance) < 10
                                   }
+                                  className={`p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                                    userVotedInPool ||
+                                    submissionVoteStatus[submission.id]
+                                      ? "bg-green-300 text-green-800"
+                                      : "text-gray-600 hover:bg-green-200 active:bg-green-300"
+                                  } hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]`}
+                                  onClick={() => handleVote(submission, "up")}
                                 >
-                                  <ChevronUp className="w-6 h-6" />
+                                  {votingSubmission === submission.id ? (
+                                    <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <ChevronUp className="w-6 h-6" />
+                                  )}
                                 </Button>
 
+                                {/* Vote Count */}
                                 <span className="text-xl font-black text-black my-2 select-none">
                                   {submission.vote_count}
                                 </span>
 
+                                {/* Vote Down Button (Disabled - not supported by contract) */}
                                 <Button
                                   variant="noShadow"
                                   size="sm"
-                                  className="p-2 border-2 border-black transition-all duration-200 hover:scale-110 active:scale-95 text-gray-600 hover:bg-red-200 active:bg-red-300 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                                  onClick={() =>
-                                    handleVote(submission.id, "down")
-                                  }
+                                  disabled={true}
+                                  className="p-2 border-2 border-black transition-all duration-200 opacity-30 cursor-not-allowed bg-gray-300 text-gray-500"
+                                  title="Downvoting not supported"
                                 >
                                   <ChevronDown className="w-6 h-6" />
                                 </Button>
+
+                                {/* Voting Status Indicators */}
+                                {!isConnected && (
+                                  <div className="text-xs text-red-500 font-bold mt-1 text-center">
+                                    Connect Wallet
+                                  </div>
+                                )}
+                                {isConnected &&
+                                  parseFloat(userPsgBalance) < 10 && (
+                                    <div className="text-xs text-orange-500 font-bold mt-1 text-center">
+                                      Need 10 PSG
+                                    </div>
+                                  )}
+                                {isConnected && userVotedInPool && (
+                                  <div className="text-xs text-green-500 font-bold mt-1 text-center">
+                                    Already Voted
+                                  </div>
+                                )}
+                                {selectedPool &&
+                                  Date.now() <
+                                    selectedPool.submission_deadline * 1000 && (
+                                    <div className="text-xs text-blue-500 font-bold mt-1 text-center">
+                                      Voting Soon
+                                    </div>
+                                  )}
+                                {selectedPool &&
+                                  Date.now() >
+                                    selectedPool.voting_deadline * 1000 && (
+                                    <div className="text-xs text-red-500 font-bold mt-1 text-center">
+                                      Voting Ended
+                                    </div>
+                                  )}
                               </div>
 
                               {/* Content Section */}
