@@ -99,7 +99,7 @@ export default function KitDesignPage() {
     Record<number, boolean>
   >({});
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  
+
   // Ref to prevent multiple simultaneous refresh operations
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRefreshingRef = useRef<boolean>(false);
@@ -189,7 +189,7 @@ export default function KitDesignPage() {
       const handleSuccessfulVote = async () => {
         try {
           console.log("Refreshing data after successful vote...");
-          
+
           // Refresh submissions to get updated vote counts
           await refreshSubmissions();
           // Refresh vote counts
@@ -222,7 +222,16 @@ export default function KitDesignPage() {
       // Add a delay to allow blockchain state to settle
       refreshTimeoutRef.current = setTimeout(handleSuccessfulVote, 1000);
     }
-  }, [voteSuccess, selectedPool?.id, userAddress, isConnected, refreshSubmissions, refreshVoteCounts, hasUserVotedInPool, resetSuccess]);
+  }, [
+    voteSuccess,
+    selectedPool?.id,
+    userAddress,
+    isConnected,
+    refreshSubmissions,
+    refreshVoteCounts,
+    hasUserVotedInPool,
+    resetSuccess,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1149,7 +1158,10 @@ export default function KitDesignPage() {
                                 </div>
 
                                 {/* Kit Design Image */}
-                                <div className="bg-gray-100 border-4 border-black rounded-lg overflow-hidden h-48 relative">
+                                <div
+                                  className="bg-gray-100 border-4 border-black rounded-lg overflow-hidden relative"
+                                  style={{ width: "400px", height: "250px" }}
+                                >
                                   {submission.content_url ? (
                                     <>
                                       <img
@@ -1157,7 +1169,7 @@ export default function KitDesignPage() {
                                           submission.content_url
                                         )}
                                         alt={`Submission #${submission.id}`}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover object-top"
                                         onLoad={() => {
                                           console.log(
                                             "Image loaded successfully:",

@@ -1382,7 +1382,7 @@ export default function TShirtEditor3D() {
 
       // Step 1: Create GIF (zoomed in for submission)
       setSubmissionStep("Creating 360° GIF...");
-      setSubmissionProgress(20);
+      setSubmissionProgress(30);
 
       const gifBlob = await createGifForSubmission();
       console.log("Created GIF blob:", {
@@ -1390,22 +1390,9 @@ export default function TShirtEditor3D() {
         type: gifBlob.type,
       });
 
-      // Step 2: Save to local storage
-      setSubmissionStep("Saving to local storage...");
-      setSubmissionProgress(40);
-
-      const reader = new FileReader();
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(gifBlob);
-      });
-
-      localStorage.setItem(`psg-kit-submission-${Date.now()}`, base64Data);
-
-      // Step 3: Upload to IPFS
+      // Step 2: Upload to IPFS
       setSubmissionStep("Uploading GIF to IPFS...");
-      setSubmissionProgress(60);
+      setSubmissionProgress(50);
 
       const timestamp = Date.now();
       const file = new File([gifBlob], `psg-kit-design-${timestamp}.gif`, {
@@ -1453,9 +1440,9 @@ export default function TShirtEditor3D() {
         gateway: `https://gateway.pinata.cloud/ipfs/${cid}`,
       });
 
-      // Step 4: Submit to pool
+      // Step 3: Submit to pool
       setSubmissionStep("Submitting to pool...");
-      setSubmissionProgress(80);
+      setSubmissionProgress(75);
 
       await submitToPoolWithCID(poolId, cid);
 
@@ -1562,7 +1549,7 @@ export default function TShirtEditor3D() {
 
       // Capture frames as base64 data URLs (same as exportAsGif)
       const frames: string[] = [];
-      const totalFrames = 30;
+      const totalFrames = 40;
 
       for (let i = 0; i < totalFrames; i++) {
         try {
