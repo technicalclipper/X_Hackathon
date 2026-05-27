@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import supabase from '@/lib/supabaseConfig';
+import { useState, useEffect } from "react";
+import supabase from "@/lib/supabaseConfig";
 
 export interface OwnedNFT {
   id: number;
@@ -27,10 +27,12 @@ export interface OwnedNFT {
 export const useOwnedNFTs = (ownerAddress?: string) => {
   const [ownedNFTs, setOwnedNFTs] = useState<OwnedNFT[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [filteredNFTs, setFilteredNFTs] = useState<OwnedNFT[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filterType, setFilterType] = useState<'all' | 'tifo' | 'match_video' | 'jersey' | 'tickets'>('all');
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filterType, setFilterType] = useState<
+    "all" | "tifo" | "match_video" | "jersey" | "tickets"
+  >("all");
 
   // Fetch owned NFTs
   const fetchOwnedNFTs = async () => {
@@ -41,14 +43,15 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
 
     try {
       setIsLoading(true);
-      setError('');
+      setError("");
 
-      console.log('Fetching owned NFTs for address:', ownerAddress);
+      console.log("Fetching owned NFTs for address:", ownerAddress);
 
       // Query NFTs based on current_owner_address instead of original creator
       const { data, error } = await supabase
-        .from('nft_mints')
-        .select(`
+        .from("nft_mints")
+        .select(
+          `
           *,
           submissions!inner(
             id,
@@ -68,44 +71,47 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
               created_at
             )
           )
-        `)
-        .eq('current_owner_address', ownerAddress);
+        `
+        )
+        .eq("current_owner_address", ownerAddress);
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error("Supabase error:", error);
         throw new Error(`Failed to fetch owned NFTs: ${error.message}`);
       }
 
       // Transform the data to flatten the structure
-      const transformedData: OwnedNFT[] = data?.map((nft: any) => ({
-        id: nft.id,
-        submission_id: nft.submission_id,
-        minted_token_id: nft.minted_token_id,
-        mint_tx_hash: nft.mint_tx_hash,
-        created_at: nft.created_at,
-        current_owner_address: nft.current_owner_address,
-        // Submission data
-        pool_id: nft.submissions.pool_id,
-        creator_address: nft.submissions.creator_address,
-        content_url: nft.submissions.content_url,
-        contract_submission_id: nft.submissions.contract_submission_id,
-        vote_count: nft.submissions.vote_count,
-        submission_created_at: nft.submissions.created_at,
-        // Pool data (nested under submissions)
-        pool_type: nft.submissions.pools.pool_type,
-        match_id: nft.submissions.pools.match_id,
-        submission_deadline: nft.submissions.pools.submission_deadline,
-        voting_deadline: nft.submissions.pools.voting_deadline,
-        pool_active: nft.submissions.pools.active,
-        pool_created_at: nft.submissions.pools.created_at,
-      })) || [];
+      const transformedData: OwnedNFT[] =
+        data?.map((nft: any) => ({
+          id: nft.id,
+          submission_id: nft.submission_id,
+          minted_token_id: nft.minted_token_id,
+          mint_tx_hash: nft.mint_tx_hash,
+          created_at: nft.created_at,
+          current_owner_address: nft.current_owner_address,
+          // Submission data
+          pool_id: nft.submissions.pool_id,
+          creator_address: nft.submissions.creator_address,
+          content_url: nft.submissions.content_url,
+          contract_submission_id: nft.submissions.contract_submission_id,
+          vote_count: nft.submissions.vote_count,
+          submission_created_at: nft.submissions.created_at,
+          // Pool data (nested under submissions)
+          pool_type: nft.submissions.pools.pool_type,
+          match_id: nft.submissions.pools.match_id,
+          submission_deadline: nft.submissions.pools.submission_deadline,
+          voting_deadline: nft.submissions.pools.voting_deadline,
+          pool_active: nft.submissions.pools.active,
+          pool_created_at: nft.submissions.pools.created_at,
+        })) || [];
 
-      console.log('Fetched owned NFTs:', transformedData);
+      console.log("Fetched owned NFTs:", transformedData);
       setOwnedNFTs(transformedData);
-
     } catch (err) {
-      console.error('Error fetching owned NFTs:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch owned NFTs');
+      console.error("Error fetching owned NFTs:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch owned NFTs"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -117,17 +123,18 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(nft => 
-        nft.match_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        nft.pool_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        nft.minted_token_id.includes(searchTerm)
+      filtered = filtered.filter(
+        (nft) =>
+          nft.match_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          nft.pool_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          nft.minted_token_id.includes(searchTerm)
       );
     }
 
     // Filter by type
-    if (filterType !== 'all') {
-      filtered = filtered.filter(nft => 
-        nft.pool_type.toLowerCase() === filterType.toLowerCase()
+    if (filterType !== "all") {
+      filtered = filtered.filter(
+        (nft) => nft.pool_type.toLowerCase() === filterType.toLowerCase()
       );
     }
 
@@ -150,18 +157,26 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
 
   const getPoolTypeLabel = (poolType: string) => {
     switch (poolType.toUpperCase()) {
-      case 'TIFO': return 'TIFO';
-      case 'MATCH_VIDEO': return 'Match Video';
-      case 'JERSEY': return 'Jersey';
-      case 'TICKETS': return 'Tickets';
-      default: return poolType;
+      case "TIFO":
+        return "TIFO";
+      case "MATCH_VIDEO":
+        return "Match Video";
+      case "JERSEY":
+        return "Jersey";
+      case "TICKETS":
+        return "Tickets";
+      default:
+        return poolType;
     }
   };
 
   const getGatewayUrl = (ipfsUrl: string) => {
-    if (!ipfsUrl) return '';
-    if (ipfsUrl.startsWith('http')) return ipfsUrl;
-    return `https://gateway.pinata.cloud/ipfs/${ipfsUrl.replace('ipfs://', '')}`;
+    if (!ipfsUrl) return "";
+    if (ipfsUrl.startsWith("http")) return ipfsUrl;
+    return `https://tan-adjacent-mammal-701.mypinata.cloud/ipfs/${ipfsUrl.replace(
+      "ipfs://",
+      ""
+    )}`;
   };
 
   const refreshNFTs = () => {
@@ -172,23 +187,23 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
     // Data
     ownedNFTs,
     filteredNFTs,
-    
+
     // Loading states
     isLoading,
     error,
-    
+
     // Filter states
     searchTerm,
     setSearchTerm,
     filterType,
     setFilterType,
-    
+
     // Functions
     fetchOwnedNFTs,
     refreshNFTs,
     formatDate,
     formatDateString,
     getPoolTypeLabel,
-    getGatewayUrl
+    getGatewayUrl,
   };
-}; 
+};

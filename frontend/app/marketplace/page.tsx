@@ -238,8 +238,6 @@ export default function NFTMarketplace() {
     }
   }, [endAuctionSuccess, refreshAuctions, refreshNFTs, resetEndAuctionForm]);
 
-
-
   // Static NFT items replaced with real auction data from useAuctions hook
 
   const myNFTs: UserNFT[] = [
@@ -437,7 +435,7 @@ export default function NFTMarketplace() {
     if (isEnding) {
       return;
     }
-    
+
     // Set the token ID and call endAuction directly
     setEndAuctionTokenId(tokenId.toString());
     // Call endAuction directly to avoid multiple calls

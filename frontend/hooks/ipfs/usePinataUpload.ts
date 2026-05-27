@@ -1,49 +1,49 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export const usePinataUpload = () => {
   // Upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadedCID, setUploadedCID] = useState<string>('');
+  const [uploadedCID, setUploadedCID] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   // File validation
   const [fileValidation, setFileValidation] = useState<{
     isValid: boolean;
     message: string;
-  }>({ isValid: true, message: '' });
+  }>({ isValid: true, message: "" });
 
   // Upload function
   const uploadToPinata = async () => {
     if (!selectedFile) {
-      setError('Please select a file first');
+      setError("Please select a file first");
       return;
     }
 
     try {
       setIsUploading(true);
-      setError('');
+      setError("");
       setUploadProgress(0);
 
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append("file", selectedFile);
 
       // Add metadata
       const metadata = {
         name: selectedFile.name,
         description: `Uploaded via Fanvas app - ${new Date().toISOString()}`,
         attributes: {
-          type: 'fan-content',
+          type: "fan-content",
           uploadedAt: new Date().toISOString(),
           fileSize: selectedFile.size,
-          fileType: selectedFile.type
-        }
+          fileType: selectedFile.type,
+        },
       };
-      formData.append('pinataMetadata', JSON.stringify(metadata));
+      formData.append("pinataMetadata", JSON.stringify(metadata));
 
-      const response = await fetch('/api/upload-to-pinata', {
-        method: 'POST',
+      const response = await fetch("/api/upload-to-pinata", {
+        method: "POST",
         body: formData,
       });
 
@@ -54,9 +54,8 @@ export const usePinataUpload = () => {
       const result = await response.json();
       setUploadedCID(result.IpfsHash);
       setUploadProgress(100);
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      setError(err instanceof Error ? err.message : "Upload failed");
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
@@ -66,18 +65,18 @@ export const usePinataUpload = () => {
   // File selection handler
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
-    setUploadedCID('');
-    setError('');
+    setUploadedCID("");
+    setError("");
     setUploadProgress(0);
 
     // Validate file
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
     if (file.size > maxSize) {
       setFileValidation({
         isValid: false,
-        message: 'File size must be less than 10MB'
+        message: "File size must be less than 10MB",
       });
       return;
     }
@@ -85,26 +84,26 @@ export const usePinataUpload = () => {
     if (!allowedTypes.includes(file.type)) {
       setFileValidation({
         isValid: false,
-        message: 'Only JPEG, PNG, GIF, and WebP files are allowed'
+        message: "Only JPEG, PNG, GIF, and WebP files are allowed",
       });
       return;
     }
 
-    setFileValidation({ isValid: true, message: '' });
+    setFileValidation({ isValid: true, message: "" });
   };
 
   // Reset function
   const resetUpload = () => {
     setSelectedFile(null);
-    setUploadedCID('');
-    setError('');
+    setUploadedCID("");
+    setError("");
     setUploadProgress(0);
-    setFileValidation({ isValid: true, message: '' });
+    setFileValidation({ isValid: true, message: "" });
   };
 
   // Get IPFS gateway URL
   const getGatewayUrl = (cid: string) => {
-    return `https://gateway.pinata.cloud/ipfs/${cid}`;
+    return `https://tan-adjacent-mammal-701.mypinata.cloud/ipfs/${cid}`;
   };
 
   return {
@@ -120,6 +119,6 @@ export const usePinataUpload = () => {
     uploadToPinata,
     handleFileSelect,
     resetUpload,
-    getGatewayUrl
+    getGatewayUrl,
   };
-}; 
+};

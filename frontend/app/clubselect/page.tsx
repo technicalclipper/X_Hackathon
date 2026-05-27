@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useWallet } from "@/components/WalletProvider";
 
 interface Club {
   id: string;
@@ -34,14 +35,20 @@ interface Club {
 
 export default function ClubSelect() {
   const router = useRouter();
-  const [userTokens] = useState({
-    psg: 1,
+  const { psgBalance, isConnected, isConnecting } = useWallet();
+
+  // Parse PSG balance to a number, default to 0 if not connected or invalid
+  const psgTokens = isConnected ? parseFloat(psgBalance) || 0 : 0;
+
+  // For other clubs, we'll keep them at 0 for now since we only have PSG integration
+  const userTokens = {
+    psg: psgTokens,
     fcb: 0,
     juve: 0,
     acm: 0,
     atm: 0,
     ars: 0,
-  }); // User's club-specific tokens
+  };
 
   const clubs: Club[] = [
     {
@@ -50,7 +57,7 @@ export default function ClubSelect() {
       shortName: "PSG",
       color: "bg-blue-800",
       tokensRequired: 1,
-      isAvailable: userTokens.psg >= 1,
+      isAvailable: psgTokens >= 1,
       memberCount: 15420,
       description: "The Parisian powerhouse with global superstars",
       logoPath: "/logos/psg.png",
@@ -160,6 +167,16 @@ export default function ClubSelect() {
                   <div className="flex items-center gap-2 bg-main text-black px-3 py-2 border-2 border-border font-black text-sm">
                     <Coins className="w-4 h-4" />
                     <span>TOKENS</span>
+                    {!isConnected && !isConnecting && (
+                      <span className="text-xs opacity-70">
+                        (Connect Wallet)
+                      </span>
+                    )}
+                    {isConnecting && (
+                      <span className="text-xs opacity-70">
+                        (Connecting...)
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -194,8 +211,13 @@ export default function ClubSelect() {
                             />
                           </div>
                           <span className="text-sm font-black text-black min-w-[16px] text-center">
-                            {userTokens[club.id as keyof typeof userTokens] ||
-                              0}
+                            {club.id === "psg" && isConnecting
+                              ? "..."
+                              : club.id === "psg"
+                              ? parseFloat(psgBalance || "0").toFixed(1)
+                              : userTokens[
+                                  club.id as keyof typeof userTokens
+                                ] || 0}
                           </span>
                         </div>
 
@@ -207,7 +229,14 @@ export default function ClubSelect() {
                           transition={{ duration: 0.2 }}
                         >
                           {club.shortName} TOKENS:{" "}
-                          {userTokens[club.id as keyof typeof userTokens] || 0}
+                          {club.id === "psg" && isConnecting
+                            ? "Connecting..."
+                            : club.id === "psg" && !isConnected
+                            ? "Not Connected"
+                            : club.id === "psg"
+                            ? parseFloat(psgBalance || "0").toFixed(2)
+                            : userTokens[club.id as keyof typeof userTokens] ||
+                              0}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black border-l border-t border-white rotate-45 translate-y-1"></div>
                         </motion.div>
                       </motion.div>
@@ -248,9 +277,13 @@ export default function ClubSelect() {
                               <span className="min-w-[60px]">
                                 {club.shortName}:{" "}
                                 <span className="font-black text-main">
-                                  {userTokens[
-                                    club.id as keyof typeof userTokens
-                                  ] || 0}
+                                  {club.id === "psg" && isConnecting
+                                    ? "..."
+                                    : club.id === "psg"
+                                    ? parseFloat(psgBalance || "0").toFixed(1)
+                                    : userTokens[
+                                        club.id as keyof typeof userTokens
+                                      ] || 0}
                                 </span>
                               </span>
                             </div>
