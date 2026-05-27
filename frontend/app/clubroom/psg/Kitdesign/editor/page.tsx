@@ -59,6 +59,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "sonner";
 import { X, HelpCircle } from "lucide-react";
+import { usePinataUpload } from "@/hooks/ipfs/usePinataUpload";
+import { useSubmitToPool } from "@/hooks/contracts/useSubmitToPool";
+import { usePools, Pool } from "@/hooks/database/usePools";
+import { useWallet } from "@/components/WalletProvider";
+import supabase from "@/lib/supabaseConfig";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Tool {
   id: string;
@@ -110,6 +122,7 @@ function TShirtModel({
   isRecordingGif,
   recordingProgress,
   gifRotationRef,
+  isRecordingForSubmission,
 }: {
   activeView: "front" | "back";
   activeTool: string;
@@ -128,6 +141,7 @@ function TShirtModel({
   isRecordingGif?: boolean;
   recordingProgress?: number;
   gifRotationRef?: React.MutableRefObject<number>;
+  isRecordingForSubmission?: boolean;
 }) {
   const meshRef = useRef<THREE.Group>(null);
   const tshirtMeshRef = useRef<THREE.Mesh>(null);
@@ -153,6 +167,16 @@ function TShirtModel({
         if (gifRotationRef) {
           gifRotationRef.current = meshRef.current.rotation.y;
         }
+
+        // Zoom in for submission recording
+        if (isRecordingForSubmission) {
+          const targetPosition = 3.5; // Closer camera for submission
+          state.camera.position.z = THREE.MathUtils.lerp(
+            state.camera.position.z,
+            targetPosition,
+            0.1
+          );
+        }
       } else if (!isRotationLocked) {
         const targetRotation = activeView === "front" ? 0 : Math.PI;
         meshRef.current.rotation.y = THREE.MathUtils.lerp(
@@ -160,6 +184,15 @@ function TShirtModel({
           targetRotation,
           0.1
         );
+
+        // Reset camera to default position when not recording
+        if (state.camera.position.z !== 5) {
+          state.camera.position.z = THREE.MathUtils.lerp(
+            state.camera.position.z,
+            5,
+            0.1
+          );
+        }
       }
     }
   });
@@ -465,6 +498,49 @@ export default function TShirtEditor3D() {
   const [showQuickGuide, setShowQuickGuide] = useState(true);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionProgress, setSubmissionProgress] = useState(0);
+  const [submissionStep, setSubmissionStep] = useState("");
+  const [isRecordingForSubmission, setIsRecordingForSubmission] =
+    useState(false);
+
+  // Initialize hooks
+  const {
+    pools,
+    activePools,
+    isLoading: poolsLoading,
+    fetchPools,
+  } = usePools();
+  const {
+    uploadToPinata,
+    isUploading,
+    uploadedCID,
+    resetUpload,
+    handleFileSelect,
+  } = usePinataUpload();
+  const {
+    submitToPool,
+    isSubmitting: isSubmittingToPool,
+    error: submitError,
+  } = useSubmitToPool();
+  const { contract, userAddress, isConnected } = useWallet();
+
+  // Filter jersey pools with submission time left
+  const getAvailableJerseyPools = () => {
+    const now = Math.floor(Date.now() / 1000);
+
+    return pools.filter((pool) => {
+      const isJersey = pool.pool_type?.toLowerCase() === "jersey";
+      const isActive = pool.active;
+      const hasTimeLeft = pool.submission_deadline > now;
+
+      return isJersey && isActive && hasTimeLeft;
+    });
+  };
+
+  const availableJerseyPools = getAvailableJerseyPools();
 
   useEffect(() => {
     const frontCanvas = document.createElement("canvas");
@@ -496,6 +572,11 @@ export default function TShirtEditor3D() {
     const backTex = new THREE.CanvasTexture(backCanvas);
     backTex.flipY = false;
     setBackTexture(backTex);
+  }, []);
+
+  // Fetch pools on component mount
+  useEffect(() => {
+    fetchPools();
   }, []);
 
   const tools: Tool[] = [
@@ -1274,6 +1355,309 @@ export default function TShirtEditor3D() {
     URL.revokeObjectURL(url);
   };
 
+  const handleSubmitEntry = () => {
+    if (!allLogosPlaced) {
+      toast.error("❌ Cannot submit entry", {
+        description: "Please place all required logos before submitting",
+      });
+      return;
+    }
+
+    if (availableJerseyPools.length === 0) {
+      toast.error("❌ No available pools", {
+        description: "No jersey pools are currently accepting submissions",
+      });
+      return;
+    }
+
+    setShowSubmitDialog(true);
+  };
+
+  const performSubmitEntry = async (poolId: number) => {
+    try {
+      setIsSubmitting(true);
+      setShowSubmitDialog(false);
+      setSubmissionProgress(0);
+      setSubmissionStep("Preparing submission...");
+
+      // Step 1: Create GIF (zoomed in for submission)
+      setSubmissionStep("Creating 360° GIF...");
+      setSubmissionProgress(20);
+
+      const gifBlob = await createGifForSubmission();
+      console.log("Created GIF blob:", {
+        size: gifBlob.size,
+        type: gifBlob.type,
+      });
+
+      // Step 2: Save to local storage
+      setSubmissionStep("Saving to local storage...");
+      setSubmissionProgress(40);
+
+      const reader = new FileReader();
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(gifBlob);
+      });
+
+      localStorage.setItem(`psg-kit-submission-${Date.now()}`, base64Data);
+
+      // Step 3: Upload to IPFS
+      setSubmissionStep("Uploading GIF to IPFS...");
+      setSubmissionProgress(60);
+
+      const timestamp = Date.now();
+      const file = new File([gifBlob], `psg-kit-design-${timestamp}.gif`, {
+        type: "image/gif",
+      });
+
+      console.log("Created file for upload:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+
+      // Use the upload function from the hook
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const metadata = {
+        name: file.name,
+        description: `PSG Kit Design submission - ${new Date().toISOString()}`,
+        attributes: {
+          type: "kit-design-gif",
+          uploadedAt: new Date().toISOString(),
+          fileSize: file.size,
+          fileType: file.type,
+        },
+      };
+      formData.append("pinataMetadata", JSON.stringify(metadata));
+
+      console.log("Uploading to IPFS with metadata:", metadata);
+
+      const response = await fetch("/api/upload-to-pinata", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const cid = result.IpfsHash;
+
+      console.log("Successfully uploaded to IPFS:", {
+        cid,
+        gateway: `https://gateway.pinata.cloud/ipfs/${cid}`,
+      });
+
+      // Step 4: Submit to pool
+      setSubmissionStep("Submitting to pool...");
+      setSubmissionProgress(80);
+
+      await submitToPoolWithCID(poolId, cid);
+
+      setSubmissionStep("Submission completed!");
+      setSubmissionProgress(100);
+
+      toast.success("🎉 Entry submitted successfully!", {
+        description: "Your design has been submitted to the pool",
+        action: {
+          label: "View Pool",
+          onClick: () => router.push("/show_pools"),
+        },
+      });
+
+      // Reset states
+      setSelectedPoolId(null);
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("❌ Submission failed", {
+        description: error instanceof Error ? error.message : "Unknown error",
+        action: {
+          label: "Retry",
+          onClick: () => performSubmitEntry(poolId),
+        },
+      });
+    } finally {
+      setIsSubmitting(false);
+      setSubmissionProgress(0);
+      setSubmissionStep("");
+    }
+  };
+
+  const submitToPoolWithCID = async (poolId: number, cid: string) => {
+    if (!contract || !isConnected) {
+      throw new Error("Please connect your wallet first");
+    }
+
+    const contentUrl = `ipfs://${cid}`;
+
+    // Call smart contract
+    const tx = await contract.submitToPool(poolId, contentUrl);
+
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+
+    // Get submission ID from event
+    const submissionMadeEvent = receipt.logs.find((log: any) => {
+      try {
+        const parsed = contract.interface.parseLog(log);
+        return parsed?.name === "SubmissionMade";
+      } catch {
+        return false;
+      }
+    });
+
+    let newSubmissionId = null;
+    if (submissionMadeEvent) {
+      const parsed = contract.interface.parseLog(submissionMadeEvent);
+      newSubmissionId = Number(parsed?.args[1]);
+    }
+
+    // Add to database
+    const { data, error } = await supabase
+      .from("submissions")
+      .insert({
+        pool_id: poolId,
+        creator_address: userAddress,
+        content_url: cid,
+        vote_count: 0,
+        contract_submission_id: newSubmissionId,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to add submission to database: ${error.message}`);
+    }
+
+    return data;
+  };
+
+  const createGifForSubmission = async (): Promise<Blob> => {
+    try {
+      const canvas = document.querySelector("canvas");
+      if (!canvas) {
+        throw new Error("Canvas not found");
+      }
+
+      console.log("Starting frame capture for submission GIF generation...");
+
+      // Store original states
+      const originalIsRotationLocked = isRotationLocked;
+      const originalActiveView = activeView;
+      const originalIsRecordingGif = isRecordingGif;
+
+      // Set recording states for submission (includes zoom AND rotation)
+      setIsRotationLocked(false);
+      setIsRecordingGif(true); // This enables automatic rotation
+      setIsRecordingForSubmission(true); // This enables camera zoom
+      setActiveView("front");
+
+      // Wait for state changes to take effect
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Capture frames as base64 data URLs (same as exportAsGif)
+      const frames: string[] = [];
+      const totalFrames = 30;
+
+      for (let i = 0; i < totalFrames; i++) {
+        try {
+          console.log(`Capturing frame ${i + 1}/${totalFrames} for submission`);
+
+          // Capture current frame as high-quality PNG
+          const dataUrl = canvas.toDataURL("image/png", 0.9);
+          frames.push(dataUrl);
+
+          // Wait for model rotation and rendering (same timing as exportAsGif)
+          await new Promise((resolve) => setTimeout(resolve, 120));
+        } catch (error) {
+          console.warn(`Failed to capture frame ${i + 1}:`, error);
+          // Create a fallback frame
+          const fallbackCanvas = document.createElement("canvas");
+          fallbackCanvas.width = 800;
+          fallbackCanvas.height = 600;
+          const ctx = fallbackCanvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#9ca3af";
+            ctx.fillRect(0, 0, 800, 600);
+            ctx.fillStyle = "#9BA3AF";
+            ctx.font = "20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`Frame ${i + 1}`, 400, 300);
+            frames.push(fallbackCanvas.toDataURL("image/png"));
+          }
+        }
+      }
+
+      if (frames.length === 0) {
+        throw new Error("No frames captured for submission");
+      }
+
+      console.log(
+        `Captured ${frames.length} frames, generating GIF via server...`
+      );
+
+      // Use the same server-side API as exportAsGif
+      const response = await fetch("/api/generate-gif", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          frames,
+          options: {
+            fps: 8, // Slightly faster for submission
+            width: 800,
+            height: 600,
+            quality: "high",
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+
+      if (blob.size === 0) {
+        throw new Error("Generated GIF is empty");
+      }
+
+      console.log(
+        `🎉 Submission GIF generated successfully! Size: ${(
+          blob.size /
+          1024 /
+          1024
+        ).toFixed(2)}MB`
+      );
+
+      // Restore original states
+      setIsRotationLocked(originalIsRotationLocked);
+      setIsRecordingGif(originalIsRecordingGif);
+      setIsRecordingForSubmission(false);
+      setActiveView(originalActiveView);
+      gifRotationRef.current = 0;
+
+      return blob;
+    } catch (error) {
+      console.error("Error creating GIF for submission:", error);
+
+      // Restore original states on error
+      setIsRotationLocked(isRotationLocked);
+      setIsRecordingGif(false);
+      setIsRecordingForSubmission(false);
+      gifRotationRef.current = 0;
+
+      throw error;
+    }
+  };
+
   const allLogosPlaced = useMemo(() => {
     return requiredLogos.every((logo) => placedLogos.has(logo.id));
   }, [placedLogos, requiredLogos]);
@@ -1626,12 +2010,17 @@ export default function TShirtEditor3D() {
                       isRecordingGif={isRecordingGif}
                       recordingProgress={recordingProgress}
                       gifRotationRef={gifRotationRef}
+                      isRecordingForSubmission={isRecordingForSubmission}
                     />
 
                     <OrbitControls
                       enablePan={false}
-                      enableZoom={true}
-                      enableRotate={!isRotationLocked && !isRecordingGif}
+                      enableZoom={!isRecordingForSubmission}
+                      enableRotate={
+                        !isRotationLocked &&
+                        !isRecordingGif &&
+                        !isRecordingForSubmission
+                      }
                       maxPolarAngle={Math.PI / 2}
                       minPolarAngle={Math.PI / 4}
                       maxDistance={8}
@@ -1934,14 +2323,15 @@ export default function TShirtEditor3D() {
                   </button>
                   <button
                     className={`w-full font-black border-2 border-black p-2 transition-all duration-200 text-xs ${
-                      allLogosPlaced && !isRecordingGif
+                      allLogosPlaced && !isRecordingGif && !isSubmitting
                         ? "bg-purple-500 hover:bg-purple-600 text-white hover:scale-105"
                         : "bg-gray-400 text-gray-700 cursor-not-allowed"
                     }`}
-                    disabled={!allLogosPlaced || isRecordingGif}
+                    disabled={!allLogosPlaced || isRecordingGif || isSubmitting}
+                    onClick={handleSubmitEntry}
                   >
                     <Trophy className="w-3 h-3 mr-1 inline" />
-                    Submit Entry
+                    {isSubmitting ? "Submitting..." : "Submit Entry"}
                   </button>
                 </div>
               </div>
@@ -2129,6 +2519,134 @@ export default function TShirtEditor3D() {
               className="border-2 border-black font-black"
             >
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Submit Entry Dialog */}
+      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <DialogContent className="border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">
+              🏆 Submit Entry to Pool
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Choose a pool to submit your kit design. Your design will be
+              converted to a GIF, uploaded to IPFS, and submitted to the
+              selected pool.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="mb-4">
+              <label className="block text-sm font-black mb-2">
+                Select Pool:
+              </label>
+              <Select
+                value={selectedPoolId?.toString() || ""}
+                onValueChange={(value) => setSelectedPoolId(parseInt(value))}
+                disabled={poolsLoading}
+              >
+                <SelectTrigger className="w-full border-2 border-black font-bold">
+                  <SelectValue
+                    placeholder={
+                      poolsLoading ? "Loading pools..." : "Choose a pool..."
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {poolsLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading pools...
+                    </SelectItem>
+                  ) : availableJerseyPools.length === 0 ? (
+                    <SelectItem value="no-pools" disabled>
+                      No jersey pools available
+                    </SelectItem>
+                  ) : (
+                    availableJerseyPools.map((pool) => (
+                      <SelectItem key={pool.id} value={pool.id.toString()}>
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-bold">Pool #{pool.id}</span>
+                          <span className="text-xs text-gray-500">
+                            Match: {pool.match_id}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedPoolId && (
+              <div className="p-3 bg-gray-50 border-2 border-black">
+                <p className="text-xs text-gray-600 mb-2">
+                  <strong>Pool Details:</strong>
+                </p>
+                <p className="text-xs">
+                  Type:{" "}
+                  {
+                    availableJerseyPools.find((p) => p.id === selectedPoolId)
+                      ?.pool_type
+                  }
+                </p>
+                <p className="text-xs">
+                  Match:{" "}
+                  {
+                    availableJerseyPools.find((p) => p.id === selectedPoolId)
+                      ?.match_id
+                  }
+                </p>
+                <p className="text-xs">
+                  Submission Deadline:{" "}
+                  {availableJerseyPools.find((p) => p.id === selectedPoolId)
+                    ?.submission_deadline
+                    ? new Date(
+                        availableJerseyPools.find(
+                          (p) => p.id === selectedPoolId
+                        )!.submission_deadline * 1000
+                      ).toLocaleString()
+                    : "N/A"}
+                </p>
+              </div>
+            )}
+
+            {isSubmitting && (
+              <div className="p-3 bg-blue-50 border-2 border-blue-500">
+                <p className="text-xs font-bold text-blue-700 mb-2">
+                  {submissionStep}
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${submissionProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  {submissionProgress}% Complete
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="neutral"
+              onClick={() => setShowSubmitDialog(false)}
+              className="border-2 border-black font-black"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                selectedPoolId && performSubmitEntry(selectedPoolId)
+              }
+              disabled={!selectedPoolId}
+              className="bg-purple-500 hover:bg-purple-600 text-white border-2 border-black font-black"
+            >
+              Submit Entry
             </Button>
           </DialogFooter>
         </DialogContent>
