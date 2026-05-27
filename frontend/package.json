@@ -31,6 +31,8 @@
     "clsx": "^2.1.1",
     "ethers": "^6.15.0",
     "framer-motion": "^12.23.3",
+    "gif.js": "^0.2.0",
+    "gifencoder": "^2.0.1",
     "leva": "^0.10.0",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
@@ -46,6 +48,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/gif.js": "^0.2.5",
+    "@types/gifencoder": "^2.0.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

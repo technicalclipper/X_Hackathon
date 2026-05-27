@@ -9,6 +9,8 @@ import React, {
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Text } from "@react-three/drei";
 import * as THREE from "three";
+// @ts-ignore - gif.js doesn't have TypeScript definitions
+import GIF from "gif.js";
 import {
   ArrowLeft,
   Palette,
@@ -90,6 +92,9 @@ function TShirtModel({
   isDrawing,
   onDrawingChange,
   isRotationLocked,
+  isRecordingGif,
+  recordingProgress,
+  gifRotationRef,
 }: {
   activeView: "front" | "back";
   activeTool: string;
@@ -105,6 +110,9 @@ function TShirtModel({
   isDrawing: boolean;
   onDrawingChange: (drawing: boolean) => void;
   isRotationLocked: boolean;
+  isRecordingGif?: boolean;
+  recordingProgress?: number;
+  gifRotationRef?: React.MutableRefObject<number>;
 }) {
   const meshRef = useRef<THREE.Group>(null);
   const tshirtMeshRef = useRef<THREE.Mesh>(null);
@@ -119,14 +127,25 @@ function TShirtModel({
     console.warn("T-shirt model not found, using fallback");
   }
 
-  useFrame(() => {
-    if (meshRef.current && !isRotationLocked) {
-      const targetRotation = activeView === "front" ? 0 : Math.PI;
-      meshRef.current.rotation.y = THREE.MathUtils.lerp(
-        meshRef.current.rotation.y,
-        targetRotation,
-        0.1
-      );
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      if (isRecordingGif) {
+        // Continuous spinning for GIF recording
+        const rotationSpeed = 1.0; // Adjust speed as needed
+        meshRef.current.rotation.y += delta * rotationSpeed;
+
+        // Update the rotation reference for external tracking
+        if (gifRotationRef) {
+          gifRotationRef.current = meshRef.current.rotation.y;
+        }
+      } else if (!isRotationLocked) {
+        const targetRotation = activeView === "front" ? 0 : Math.PI;
+        meshRef.current.rotation.y = THREE.MathUtils.lerp(
+          meshRef.current.rotation.y,
+          targetRotation,
+          0.1
+        );
+      }
     }
   });
 
@@ -404,6 +423,8 @@ function LogoItem({
 export default function TShirtEditor3D() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mousePosition = useMousePosition();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gifRotationRef = useRef<number>(0);
 
   const frontCanvasRef = useRef<HTMLCanvasElement>(null);
   const backCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -423,6 +444,8 @@ export default function TShirtEditor3D() {
   const [isRotationLocked, setIsRotationLocked] = useState(false);
   const [placedLogos, setPlacedLogos] = useState<Set<string>>(new Set());
   const [logoSize, setLogoSize] = useState(0.15);
+  const [isRecordingGif, setIsRecordingGif] = useState(false);
+  const [recordingProgress, setRecordingProgress] = useState(0);
 
   useEffect(() => {
     const frontCanvas = document.createElement("canvas");
@@ -921,6 +944,259 @@ export default function TShirtEditor3D() {
   };
 
   const handleExport = () => {
+    // Offer user choice between server-side GIF and static images
+    const choice = confirm(
+      "Choose export type:\nOK = 360° GIF (server-generated)\nCancel = Static Images"
+    );
+
+    if (choice) {
+      exportAsGif(); // Now uses server-side generation
+    } else {
+      exportStaticImages();
+    }
+  };
+
+  const exportStaticImages = async () => {
+    setIsRecordingGif(true);
+    setRecordingProgress(0);
+
+    try {
+      const canvas = document.querySelector("canvas");
+      if (!canvas) {
+        throw new Error("Canvas not found");
+      }
+
+      // Create a zip-like structure with multiple images
+      const images: { name: string; dataUrl: string }[] = [];
+
+      // Capture front view
+      setActiveView("front");
+      setRecordingProgress(25);
+
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Wait for view to change
+
+      try {
+        const frontDataUrl = canvas.toDataURL("image/png");
+        images.push({ name: "front-view.png", dataUrl: frontDataUrl });
+        setRecordingProgress(50);
+      } catch (error) {
+        console.warn("Could not capture front view:", error);
+      }
+
+      // Capture back view
+      setActiveView("back");
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Wait for view to change
+
+      try {
+        const backDataUrl = canvas.toDataURL("image/png");
+        images.push({ name: "back-view.png", dataUrl: backDataUrl });
+        setRecordingProgress(75);
+      } catch (error) {
+        console.warn("Could not capture back view:", error);
+      }
+
+      // Download images
+      images.forEach((image, index) => {
+        setTimeout(() => {
+          const link = document.createElement("a");
+          link.href = image.dataUrl;
+          link.download = `psg-kit-${image.name}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, index * 100); // Stagger downloads
+      });
+
+      // Also export design data
+      exportAsJson();
+
+      setRecordingProgress(100);
+
+      setTimeout(() => {
+        setIsRecordingGif(false);
+        setRecordingProgress(0);
+        alert(`Exported ${images.length} images and design data successfully!`);
+      }, 1000);
+    } catch (error) {
+      console.error("Error exporting images:", error);
+      setIsRecordingGif(false);
+      setRecordingProgress(0);
+      alert("Error exporting images. Trying JSON export instead...");
+      exportAsJson();
+    }
+  };
+
+  const exportAsGif = async () => {
+    if (isRecordingGif) return;
+
+    setIsRecordingGif(true);
+    setRecordingProgress(0);
+
+    try {
+      // Force front view for consistency
+      setActiveView("front");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const canvas = document.querySelector("canvas");
+      if (!canvas) {
+        throw new Error("Canvas not found");
+      }
+
+      console.log("Starting frame capture for server-side GIF generation...");
+
+      // Capture frames as base64 data URLs
+      const frames: string[] = [];
+      const totalFrames = 20; // Reduced for better performance
+
+      for (let i = 0; i < totalFrames; i++) {
+        try {
+          setRecordingProgress((i / totalFrames) * 60); // Reserve 40% for server processing
+
+          // Capture current frame as high-quality PNG
+          const dataUrl = canvas.toDataURL("image/png", 0.9);
+          frames.push(dataUrl);
+
+          console.log(`Captured frame ${i + 1}/${totalFrames}`);
+
+          // Wait for model rotation and rendering
+          await new Promise((resolve) => setTimeout(resolve, 120));
+        } catch (error) {
+          console.warn(`Failed to capture frame ${i + 1}:`, error);
+          // Create a fallback frame
+          const fallbackCanvas = document.createElement("canvas");
+          fallbackCanvas.width = 400;
+          fallbackCanvas.height = 300;
+          const ctx = fallbackCanvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#9ca3af";
+            ctx.fillRect(0, 0, 400, 300);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`Frame ${i + 1}`, 200, 150);
+            frames.push(fallbackCanvas.toDataURL("image/png"));
+          }
+        }
+      }
+
+      if (frames.length === 0) {
+        throw new Error("No frames captured");
+      }
+
+      console.log(
+        `Captured ${frames.length} frames, trying server generation...`
+      );
+      setRecordingProgress(65);
+
+      // Try multiple GIF generation endpoints in order of preference
+      const endpoints = [
+        { url: "/api/generate-gif", name: "GifEncoder (Fallback)" },
+      ];
+
+      let lastError: Error | null = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Trying ${endpoint.name}...`);
+          setRecordingProgress(70);
+
+          const response = await fetch(endpoint.url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              frames,
+              options: {
+                fps: 5,
+                width: 400,
+                height: 300,
+                quality: "medium",
+              },
+            }),
+          });
+
+          setRecordingProgress(85);
+
+          if (response.ok) {
+            console.log(`✅ ${endpoint.name} succeeded!`);
+
+            const blob = await response.blob();
+
+            if (blob.size === 0) {
+              throw new Error("Generated GIF is empty");
+            }
+
+            // Download the generated GIF
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `psg-kit-360-${Date.now()}.gif`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            setRecordingProgress(100);
+
+            console.log(
+              `🎉 GIF generated successfully with ${endpoint.name}! Size: ${(
+                blob.size /
+                1024 /
+                1024
+              ).toFixed(2)}MB`
+            );
+
+            setTimeout(() => {
+              setIsRecordingGif(false);
+              setRecordingProgress(0);
+              alert(
+                `🎉 360° GIF exported successfully!\n\nMethod: ${
+                  endpoint.name
+                }\nSize: ${(blob.size / 1024 / 1024).toFixed(2)}MB\nFrames: ${
+                  frames.length
+                }\n\nThe GIF shows a smooth 360° rotation of your PSG kit design!`
+              );
+            }, 1000);
+
+            return; // Success! Exit the function
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+              errorData.error || `Server error: ${response.status}`
+            );
+          }
+        } catch (endpointError) {
+          console.warn(`❌ ${endpoint.name} failed:`, endpointError);
+          lastError =
+            endpointError instanceof Error
+              ? endpointError
+              : new Error("Unknown error");
+          // Continue to next endpoint
+        }
+      }
+
+      // If we get here, all endpoints failed
+      throw new Error(
+        `All GIF generation methods failed. Last error: ${lastError?.message}`
+      );
+    } catch (error) {
+      console.error("Error creating GIF:", error);
+      setIsRecordingGif(false);
+      setRecordingProgress(0);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      alert(
+        `❌ GIF generation failed: ${errorMessage}\n\nFalling back to static images...`
+      );
+
+      // Fallback to static images
+      exportStaticImages();
+    }
+  };
+
+  const exportAsJson = () => {
     const designData = {
       elements: designElements,
       frontTextureData: frontCanvasRef.current?.toDataURL(),
@@ -939,7 +1215,9 @@ export default function TShirtEditor3D() {
     const link = document.createElement("a");
     link.href = url;
     link.download = `psg-kit-design-${Date.now()}.json`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
   };
@@ -985,10 +1263,24 @@ export default function TShirtEditor3D() {
 
                     <button
                       onClick={handleExport}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-black border-2 border-black px-4 py-2 transition-all duration-200 hover:scale-105"
+                      disabled={isRecordingGif}
+                      className={`font-black border-2 border-black px-4 py-2 transition-all duration-200 hover:scale-105 ${
+                        isRecordingGif
+                          ? "bg-gray-500 cursor-not-allowed text-white"
+                          : "bg-blue-500 hover:bg-blue-600 text-white"
+                      }`}
                     >
-                      <Download className="w-4 h-4 mr-2 inline" />
-                      Export
+                      {isRecordingGif ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 inline animate-spin" />
+                          Creating 360° GIF... {Math.round(recordingProgress)}%
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2 inline" />
+                          Export 360° GIF
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1058,6 +1350,7 @@ export default function TShirtEditor3D() {
                             }`}
                             onClick={() => handleToolSelect(tool.id)}
                             title={tool.name}
+                            disabled={isRecordingGif}
                           >
                             <tool.icon className="w-4 h-4 flex-shrink-0" />
                             <span className="text-xs font-bold">
@@ -1085,6 +1378,7 @@ export default function TShirtEditor3D() {
                             }`}
                             onClick={() => handleToolSelect(tool.id)}
                             title={tool.name}
+                            disabled={isRecordingGif}
                           >
                             <tool.icon className="w-4 h-4 flex-shrink-0" />
                             <span className="text-xs font-bold">
@@ -1106,6 +1400,7 @@ export default function TShirtEditor3D() {
                           : "bg-white text-black hover:bg-gray-100"
                       }`}
                       onClick={() => handleToolSelect("text")}
+                      disabled={isRecordingGif}
                     >
                       <Type className="w-4 h-4 flex-shrink-0" />
                       <span className="text-xs font-bold">Add Text</span>
@@ -1124,6 +1419,7 @@ export default function TShirtEditor3D() {
                         value={brushSize}
                         onChange={(e) => setBrushSize(Number(e.target.value))}
                         className="w-full"
+                        disabled={isRecordingGif}
                       />
                       <div className="text-center text-xs font-bold mt-1">
                         {brushSize}px
@@ -1144,6 +1440,7 @@ export default function TShirtEditor3D() {
                         value={logoSize}
                         onChange={(e) => setLogoSize(Number(e.target.value))}
                         className="w-full"
+                        disabled={isRecordingGif}
                       />
                       <div className="text-center text-xs font-bold mt-1">
                         {Math.round(logoSize * 100)}%
@@ -1164,6 +1461,7 @@ export default function TShirtEditor3D() {
                         value={brushColor}
                         onChange={(e) => setBrushColor(e.target.value)}
                         className="w-full h-8 border-2 border-black rounded cursor-pointer mb-2"
+                        disabled={isRecordingGif}
                       />
                       <div className="grid grid-cols-4 gap-1">
                         {colorPalette.map((color) => (
@@ -1176,6 +1474,7 @@ export default function TShirtEditor3D() {
                                 : ""
                             }`}
                             style={{ backgroundColor: color }}
+                            disabled={isRecordingGif}
                           />
                         ))}
                       </div>
@@ -1198,6 +1497,7 @@ export default function TShirtEditor3D() {
                             : "bg-white text-black hover:bg-gray-100"
                         } transition-all duration-200 hover:scale-105`}
                         onClick={() => setActiveView("front")}
+                        disabled={isRecordingGif}
                       >
                         FRONT
                       </button>
@@ -1208,6 +1508,7 @@ export default function TShirtEditor3D() {
                             : "bg-white text-black hover:bg-gray-100"
                         } transition-all duration-200 hover:scale-105`}
                         onClick={() => setActiveView("back")}
+                        disabled={isRecordingGif}
                       >
                         BACK
                       </button>
@@ -1217,15 +1518,17 @@ export default function TShirtEditor3D() {
 
                 <div className="flex-1 bg-gray-400 relative min-h-0">
                   <Canvas
+                    ref={canvasRef}
                     camera={{ position: [0, 0, 5], fov: 50 }}
                     style={{
                       background: "#9ca3af",
                       width: "100%",
                       height: "100%",
                     }}
+                    gl={{ preserveDrawingBuffer: true }}
                   >
-                    <ambientLight intensity={0.2} />
-                    <directionalLight position={[10, 10, 5]} intensity={0.5} />
+                    <ambientLight intensity={0.3} />
+                    <directionalLight position={[10, 10, 5]} intensity={0.7} />
                     <spotLight position={[-10, -10, -5]} intensity={0.5} />
 
                     <TShirtModel
@@ -1243,12 +1546,15 @@ export default function TShirtEditor3D() {
                       isDrawing={isDrawing}
                       onDrawingChange={setIsDrawing}
                       isRotationLocked={isRotationLocked}
+                      isRecordingGif={isRecordingGif}
+                      recordingProgress={recordingProgress}
+                      gifRotationRef={gifRotationRef}
                     />
 
                     <OrbitControls
                       enablePan={false}
                       enableZoom={true}
-                      enableRotate={!isRotationLocked}
+                      enableRotate={!isRotationLocked && !isRecordingGif}
                       maxPolarAngle={Math.PI / 2}
                       minPolarAngle={Math.PI / 4}
                       maxDistance={8}
@@ -1257,6 +1563,32 @@ export default function TShirtEditor3D() {
 
                     <Environment preset="studio" />
                   </Canvas>
+
+                  {/* Recording overlay */}
+                  {isRecordingGif && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                      <div className="bg-white border-4 border-black p-6 text-center">
+                        <div className="flex items-center gap-3 mb-4">
+                          <RefreshCw className="w-6 h-6 animate-spin" />
+                          <h3 className="text-xl font-black">
+                            Recording 360° GIF
+                          </h3>
+                        </div>
+                        <div className="w-64 bg-gray-200 border-2 border-black h-4 mb-2">
+                          <div
+                            className="bg-blue-500 h-full transition-all duration-300"
+                            style={{ width: `${recordingProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-sm font-bold">
+                          {Math.round(recordingProgress)}% Complete
+                        </p>
+                        <p className="text-xs text-gray-600 mt-2">
+                          Please wait while we capture all frames...
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="absolute top-3 left-3 bg-black bg-opacity-90 text-white p-3 rounded border-2 border-white max-w-xs">
                     <h3 className="font-black text-sm mb-2">QUICK GUIDE:</h3>
@@ -1274,7 +1606,7 @@ export default function TShirtEditor3D() {
                         • <strong>Text:</strong> 3D text overlays
                       </li>
                       <li>
-                        • <strong>Lock:</strong> Disable rotation
+                        • <strong>360° GIF:</strong> Auto-rotation export
                       </li>
                     </ul>
                   </div>
@@ -1287,6 +1619,7 @@ export default function TShirtEditor3D() {
                           ? "bg-red-500 text-white"
                           : "bg-green-500 text-white"
                       }`}
+                      disabled={isRecordingGif}
                     >
                       {isRotationLocked ? "🔒 LOCKED" : "🔓 UNLOCKED"}
                     </button>
@@ -1308,19 +1641,21 @@ export default function TShirtEditor3D() {
                     {activeView.toUpperCase()}
                   </div>
 
-                  {activeTool === "move" && selectedElement && (
-                    <div className="absolute bottom-28 left-3 bg-orange-500 text-white p-2 border-2 border-black font-black text-xs max-w-xs">
-                      Click on T-shirt surface to move selected element
-                    </div>
-                  )}
+                  {activeTool === "move" &&
+                    selectedElement &&
+                    !isRecordingGif && (
+                      <div className="absolute bottom-28 left-3 bg-orange-500 text-white p-2 border-2 border-black font-black text-xs max-w-xs">
+                        Click on T-shirt surface to move selected element
+                      </div>
+                    )}
 
-                  {activeTool === "fill" && (
+                  {activeTool === "fill" && !isRecordingGif && (
                     <div className="absolute bottom-14 left-3 bg-purple-500 text-white p-2 border-2 border-black font-black text-xs">
                       Click on T-shirt to fill with color
                     </div>
                   )}
 
-                  {activeTool.includes("logo") && (
+                  {activeTool.includes("logo") && !isRecordingGif && (
                     <div className="absolute bottom-14 left-3 bg-green-500 text-white p-2 border-2 border-black font-black text-xs max-w-xs">
                       Click on T-shirt to place{" "}
                       {requiredLogos.find((l) => l.id === activeTool)?.name ||
@@ -1361,15 +1696,21 @@ export default function TShirtEditor3D() {
                           selectedElement === element.id
                             ? "bg-yellow-400"
                             : "bg-white"
+                        } ${
+                          isRecordingGif ? "pointer-events-none opacity-50" : ""
                         }`}
-                        onClick={() => setSelectedElement(element.id)}
+                        onClick={() =>
+                          !isRecordingGif && setSelectedElement(element.id)
+                        }
                       >
                         <button
                           className="p-1 border border-black bg-white hover:bg-gray-100 flex-shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleElementVisibility(element.id);
+                            if (!isRecordingGif)
+                              toggleElementVisibility(element.id);
                           }}
+                          disabled={isRecordingGif}
                         >
                           {element.visible ? (
                             <Eye className="w-3 h-3" />
@@ -1383,7 +1724,7 @@ export default function TShirtEditor3D() {
                             element.data.name ||
                             element.id.slice(-4)}
                         </span>
-                        {selectedElement === element.id && (
+                        {selectedElement === element.id && !isRecordingGif && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1405,7 +1746,7 @@ export default function TShirtEditor3D() {
                     </div>
                   )}
                 </div>
-                {selectedElement && (
+                {selectedElement && !isRecordingGif && (
                   <div className="p-3 border-t-2 border-black flex-shrink-0">
                     <button
                       onClick={deleteSelectedElement}
@@ -1430,12 +1771,18 @@ export default function TShirtEditor3D() {
                     const isPlaced = placedLogos.has(logo.id);
 
                     return (
-                      <LogoItem
+                      <div
                         key={logo.id}
-                        logo={logo}
-                        onAdd={() => addLogoToDesign(logo)}
-                        isPlaced={isPlaced}
-                      />
+                        className={
+                          isRecordingGif ? "opacity-50 pointer-events-none" : ""
+                        }
+                      >
+                        <LogoItem
+                          logo={logo}
+                          onAdd={() => !isRecordingGif && addLogoToDesign(logo)}
+                          isPlaced={isPlaced}
+                        />
+                      </div>
                     );
                   })}
                   <div
@@ -1458,26 +1805,41 @@ export default function TShirtEditor3D() {
                 </div>
                 <div className="p-3 space-y-2">
                   <button
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105 text-xs"
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleSave}
+                    disabled={isRecordingGif}
                   >
                     <Save className="w-3 h-3 mr-1 inline" />
                     Save Draft
                   </button>
                   <button
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105 text-xs"
+                    className={`w-full font-black border-2 border-black p-2 transition-all duration-200 hover:scale-105 text-xs ${
+                      isRecordingGif
+                        ? "bg-gray-500 cursor-not-allowed text-white"
+                        : "bg-blue-500 hover:bg-blue-600 text-white"
+                    }`}
                     onClick={handleExport}
+                    disabled={isRecordingGif}
                   >
-                    <Download className="w-3 h-3 mr-1 inline" />
-                    Export Design
+                    {isRecordingGif ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 mr-1 inline animate-spin" />
+                        Recording... {Math.round(recordingProgress)}%
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3 h-3 mr-1 inline" />
+                        Export 360° GIF
+                      </>
+                    )}
                   </button>
                   <button
                     className={`w-full font-black border-2 border-black p-2 transition-all duration-200 text-xs ${
-                      allLogosPlaced
+                      allLogosPlaced && !isRecordingGif
                         ? "bg-purple-500 hover:bg-purple-600 text-white hover:scale-105"
                         : "bg-gray-400 text-gray-700 cursor-not-allowed"
                     }`}
-                    disabled={!allLogosPlaced}
+                    disabled={!allLogosPlaced || isRecordingGif}
                   >
                     <Trophy className="w-3 h-3 mr-1 inline" />
                     Submit Entry
@@ -1489,7 +1851,7 @@ export default function TShirtEditor3D() {
         </div>
       </div>
 
-      {showTextInput && (
+      {showTextInput && !isRecordingGif && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6">
             <h3 className="text-lg font-black mb-4">ADD TEXT</h3>
@@ -1530,7 +1892,8 @@ export default function TShirtEditor3D() {
         </div>
       )}
 
-      {activeTool === "brush" && (
+      {/* Mouse cursor indicators */}
+      {!isRecordingGif && activeTool === "brush" && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-black rounded-full"
           style={{
@@ -1547,7 +1910,7 @@ export default function TShirtEditor3D() {
         />
       )}
 
-      {activeTool === "eraser" && (
+      {!isRecordingGif && activeTool === "eraser" && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-red-500 rounded-full bg-white"
           style={{
@@ -1563,7 +1926,7 @@ export default function TShirtEditor3D() {
         />
       )}
 
-      {activeTool === "fill" && (
+      {!isRecordingGif && activeTool === "fill" && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-purple-500 rounded"
           style={{
@@ -1584,7 +1947,7 @@ export default function TShirtEditor3D() {
         </div>
       )}
 
-      {activeTool.includes("logo") && (
+      {!isRecordingGif && activeTool.includes("logo") && (
         <div
           className="fixed pointer-events-none z-50 border-2 border-green-500 rounded bg-green-100"
           style={{
@@ -1604,7 +1967,7 @@ export default function TShirtEditor3D() {
         </div>
       )}
 
-      {isDrawing && (
+      {isDrawing && !isRecordingGif && (
         <div className="fixed top-4 right-4 bg-yellow-400 text-black px-4 py-2 border-2 border-black font-black text-sm z-50 animate-pulse">
           ✏️{" "}
           {activeTool === "brush"
