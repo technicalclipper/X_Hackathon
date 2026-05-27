@@ -22,6 +22,11 @@ export const useVote = () => {
   // Transaction states
   const [txHash, setTxHash] = useState<string>('');
 
+  // Reset success state
+  const resetSuccess = () => {
+    setSuccess('');
+  };
+
   // Vote function - takes poolId and contractSubmissionId
   const vote = async (poolId: number, contractSubmissionId: number) => {
     if (!contract || !isConnected) {
@@ -199,6 +204,7 @@ export const useVote = () => {
     txHash,
     
     // Functions
-    vote
+    vote,
+    resetSuccess
   };
 }; 

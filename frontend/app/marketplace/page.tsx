@@ -238,12 +238,7 @@ export default function NFTMarketplace() {
     }
   }, [endAuctionSuccess, refreshAuctions, refreshNFTs, resetEndAuctionForm]);
 
-  // Auto-call endAuction when token ID is set
-  useEffect(() => {
-    if (endAuctionTokenId && endAuctionTokenId !== "") {
-      endAuction();
-    }
-  }, [endAuctionTokenId, endAuction]);
+
 
   // Static NFT items replaced with real auction data from useAuctions hook
 
@@ -437,9 +432,16 @@ export default function NFTMarketplace() {
     setSelectedTokenId(null);
   };
 
-  const handleEndAuction = (tokenId: number) => {
-    // Set the token ID which will trigger the effect below
+  const handleEndAuction = async (tokenId: number) => {
+    // Prevent multiple calls if already ending
+    if (isEnding) {
+      return;
+    }
+    
+    // Set the token ID and call endAuction directly
     setEndAuctionTokenId(tokenId.toString());
+    // Call endAuction directly to avoid multiple calls
+    await endAuction();
   };
 
   // Update search term in auctions hook when local search changes
