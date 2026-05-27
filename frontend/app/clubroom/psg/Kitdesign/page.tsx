@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +78,7 @@ export default function KitDesignPage() {
     success: voteSuccess,
     txHash,
     vote,
+    resetSuccess,
     userPsgBalance,
   } = useVote();
 
@@ -98,6 +99,10 @@ export default function KitDesignPage() {
     Record<number, boolean>
   >({});
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  
+  // Ref to prevent multiple simultaneous refresh operations
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isRefreshingRef = useRef<boolean>(false);
 
   // Get jersey pools
   const jerseyPools = getPoolsByType("JERSEY");
@@ -177,15 +182,18 @@ export default function KitDesignPage() {
 
   // Handle successful voting
   useEffect(() => {
-    if (voteSuccess && !isRefreshing) {
+    if (voteSuccess && !isRefreshingRef.current) {
+      isRefreshingRef.current = true;
       setIsRefreshing(true);
 
       const handleSuccessfulVote = async () => {
         try {
+          console.log("Refreshing data after successful vote...");
+          
           // Refresh submissions to get updated vote counts
           await refreshSubmissions();
           // Refresh vote counts
-          refreshVoteCounts();
+          await refreshVoteCounts();
           // Reset voting state
           setVotingSubmission(null);
           // Re-check user voting status
@@ -200,13 +208,30 @@ export default function KitDesignPage() {
           console.error("Error refreshing after vote:", error);
         } finally {
           setIsRefreshing(false);
+          isRefreshingRef.current = false;
+          // Reset the success state to prevent infinite loops
+          resetSuccess();
         }
       };
 
+      // Clear any existing timeout
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
       // Add a delay to allow blockchain state to settle
-      setTimeout(handleSuccessfulVote, 1000);
+      refreshTimeoutRef.current = setTimeout(handleSuccessfulVote, 1000);
     }
-  }, [voteSuccess, isRefreshing]); // Include isRefreshing to prevent duplicate calls
+  }, [voteSuccess, selectedPool?.id, userAddress, isConnected, refreshSubmissions, refreshVoteCounts, hasUserVotedInPool, resetSuccess]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handlePoolSelect = (poolId: string) => {
     const pool = jerseyPools.find((p) => p.id.toString() === poolId);
