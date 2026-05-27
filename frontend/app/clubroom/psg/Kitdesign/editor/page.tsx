@@ -1046,7 +1046,7 @@ export default function TShirtEditor3D() {
 
       // Capture frames as base64 data URLs
       const frames: string[] = [];
-      const totalFrames = 20; // Reduced for better performance
+      const totalFrames = 40; // Reduced for better performance
 
       for (let i = 0; i < totalFrames; i++) {
         try {
@@ -1070,7 +1070,7 @@ export default function TShirtEditor3D() {
           if (ctx) {
             ctx.fillStyle = "#9ca3af";
             ctx.fillRect(0, 0, 400, 300);
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = "#9BA3AF";
             ctx.font = "20px Arial";
             ctx.textAlign = "center";
             ctx.fillText(`Frame ${i + 1}`, 200, 150);
@@ -1108,10 +1108,10 @@ export default function TShirtEditor3D() {
             body: JSON.stringify({
               frames,
               options: {
-                fps: 5,
+                fps: 6,
                 width: 400,
                 height: 300,
-                quality: "medium",
+                quality: "high",
               },
             }),
           });
