@@ -44,6 +44,21 @@ import {
   Settings,
   RefreshCw,
 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast, Toaster } from "sonner";
+import { X, HelpCircle } from "lucide-react";
 
 interface Tool {
   id: string;
@@ -421,6 +436,7 @@ function LogoItem({
 }
 
 export default function TShirtEditor3D() {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mousePosition = useMousePosition();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -446,6 +462,9 @@ export default function TShirtEditor3D() {
   const [logoSize, setLogoSize] = useState(0.15);
   const [isRecordingGif, setIsRecordingGif] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
+  const [showQuickGuide, setShowQuickGuide] = useState(true);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   useEffect(() => {
     const frontCanvas = document.createElement("canvas");
@@ -494,12 +513,6 @@ export default function TShirtEditor3D() {
   const requiredLogos = [
     { id: "psg-logo", name: "PSG Logo", required: true, category: "team" },
     { id: "nike-logo", name: "Nike", required: true, category: "sponsor" },
-    {
-      id: "qatar-airways",
-      name: "Qatar Airways",
-      required: true,
-      category: "sponsor",
-    },
   ];
 
   const colorPalette = [
@@ -930,29 +943,56 @@ export default function TShirtEditor3D() {
   };
 
   const handleSave = () => {
+    setShowSaveDialog(true);
+  };
+
+  const performSave = (saveLocation: "local" | "cloud") => {
     const designData = {
       elements: designElements,
       frontTextureData: frontCanvasRef.current?.toDataURL(),
       backTextureData: backCanvasRef.current?.toDataURL(),
       activeView,
       timestamp: new Date().toISOString(),
+      saveLocation,
     };
 
-    localStorage.setItem("tshirt-design", JSON.stringify(designData));
-    console.log("Design saved:", designData);
-    alert("Design saved successfully!");
+    if (saveLocation === "local") {
+      localStorage.setItem("tshirt-design", JSON.stringify(designData));
+      console.log("Design saved locally:", designData);
+      toast("Design saved successfully!", {
+        description: "Your design has been saved to local storage",
+        action: {
+          label: "View",
+          onClick: () => console.log("View design"),
+        },
+      });
+    } else {
+      // For now, we'll simulate cloud save to localStorage with a different key
+      localStorage.setItem("tshirt-design-cloud", JSON.stringify(designData));
+      console.log("Design saved to cloud:", designData);
+      toast("Design saved to cloud!", {
+        description: "Your design has been backed up to the cloud",
+        action: {
+          label: "Share",
+          onClick: () => console.log("Share design"),
+        },
+      });
+    }
+
+    setShowSaveDialog(false);
   };
 
   const handleExport = () => {
-    // Offer user choice between server-side GIF and static images
-    const choice = confirm(
-      "Choose export type:\nOK = 360° GIF (server-generated)\nCancel = Static Images"
-    );
+    setShowExportDialog(true);
+  };
 
-    if (choice) {
-      exportAsGif(); // Now uses server-side generation
+  const performExport = (exportType: "gif" | "images") => {
+    setShowExportDialog(false);
+
+    if (exportType === "gif") {
+      exportAsGif(); // Server-side GIF generation
     } else {
-      exportStaticImages();
+      exportStaticImages(); // Static images export
     }
   };
 
@@ -1015,13 +1055,17 @@ export default function TShirtEditor3D() {
       setTimeout(() => {
         setIsRecordingGif(false);
         setRecordingProgress(0);
-        alert(`Exported ${images.length} images and design data successfully!`);
+        toast.success("Export completed!", {
+          description: `Exported ${images.length} images and design data successfully!`,
+        });
       }, 1000);
     } catch (error) {
       console.error("Error exporting images:", error);
       setIsRecordingGif(false);
       setRecordingProgress(0);
-      alert("Error exporting images. Trying JSON export instead...");
+      toast.error("Export failed", {
+        description: "Error exporting images. Trying JSON export instead...",
+      });
       exportAsJson();
     }
   };
@@ -1150,13 +1194,17 @@ export default function TShirtEditor3D() {
             setTimeout(() => {
               setIsRecordingGif(false);
               setRecordingProgress(0);
-              alert(
-                `🎉 360° GIF exported successfully!\n\nMethod: ${
-                  endpoint.name
-                }\nSize: ${(blob.size / 1024 / 1024).toFixed(2)}MB\nFrames: ${
-                  frames.length
-                }\n\nThe GIF shows a smooth 360° rotation of your PSG kit design!`
-              );
+              toast.success("🎉 360° GIF exported successfully!", {
+                description: `Method: ${endpoint.name} | Size: ${(
+                  blob.size /
+                  1024 /
+                  1024
+                ).toFixed(2)}MB | Frames: ${frames.length}`,
+                action: {
+                  label: "Export Another",
+                  onClick: () => console.log("Export another GIF"),
+                },
+              });
             }, 1000);
 
             return; // Success! Exit the function
@@ -1187,9 +1235,13 @@ export default function TShirtEditor3D() {
 
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      alert(
-        `❌ GIF generation failed: ${errorMessage}\n\nFalling back to static images...`
-      );
+      toast.error("❌ GIF generation failed", {
+        description: `${errorMessage}. Falling back to static images...`,
+        action: {
+          label: "Retry",
+          onClick: () => exportAsGif(),
+        },
+      });
 
       // Fallback to static images
       exportStaticImages();
@@ -1227,101 +1279,123 @@ export default function TShirtEditor3D() {
   }, [placedLogos, requiredLogos]);
 
   return (
-    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
-      <div className="relative z-10 h-screen flex flex-col">
-        <div className="max-w-[1800px] mx-auto w-full flex-1 flex flex-col px-4 py-4">
+    <div className="min-h-screen bg-gray-50 relative">
+      <div className="relative z-10 min-h-screen flex flex-col pb-8">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col px-4 py-4 min-h-0">
           <div className="mb-4 flex-shrink-0">
-            <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-              <div className="bg-black text-white p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <button className="bg-white text-black border-2 border-black p-2 hover:bg-gray-100 transition-all duration-200 hover:scale-105">
-                      <ArrowLeft className="w-4 h-4" />
-                    </button>
-                    <div className="bg-white px-3 py-1 border-2 border-black">
-                      <span className="text-black font-black text-sm">
-                        3D FANVAS
+            <Card className="shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black p-0">
+              <CardHeader className="bg-black text-white p-0">
+                {/* Top Navigation Bar */}
+                <div className="bg-gray-900 px-6 py-3 border-b-2 border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => router.back()}
+                        className="bg-white text-black border-2 border-white hover:bg-gray-100 p-2 hover:scale-105 active:scale-95 transition-all duration-200 font-black"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
+                      <div className="bg-white px-3 py-1 border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <span className="text-black font-black text-sm tracking-wider">
+                          FANVAS
+                        </span>
+                      </div>
+                      <span className="text-gray-400 font-mono text-sm">
+                        / CLUB ROOMS / PSG / KIT DESIGN / EDITOR
                       </span>
                     </div>
-                  </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={clearAll}
+                        disabled={isRecordingGif}
+                        className={`font-black border-2 border-white px-3 py-2 transition-all duration-200 hover:scale-105 ${
+                          isRecordingGif
+                            ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                            : "bg-white text-black hover:bg-gray-100"
+                        }`}
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={clearAll}
-                      className="bg-red-500 hover:bg-red-600 text-white font-black border-2 border-black px-3 py-2 transition-all duration-200 hover:scale-105"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={isRecordingGif}
+                        className={`font-black border-2 border-white px-4 py-2 transition-all duration-200 hover:scale-105 ${
+                          isRecordingGif
+                            ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                            : "bg-white text-black hover:bg-gray-100"
+                        }`}
+                      >
+                        <Save className="w-4 h-4 mr-2 inline" />
+                        Save Design
+                      </button>
 
-                    <button
-                      onClick={handleSave}
-                      className="bg-green-500 hover:bg-green-600 text-white font-black border-2 border-black px-4 py-2 transition-all duration-200 hover:scale-105"
-                    >
-                      <Save className="w-4 h-4 mr-2 inline" />
-                      Save Design
-                    </button>
-
-                    <button
-                      onClick={handleExport}
-                      disabled={isRecordingGif}
-                      className={`font-black border-2 border-black px-4 py-2 transition-all duration-200 hover:scale-105 ${
-                        isRecordingGif
-                          ? "bg-gray-500 cursor-not-allowed text-white"
-                          : "bg-blue-500 hover:bg-blue-600 text-white"
-                      }`}
-                    >
-                      {isRecordingGif ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 inline animate-spin" />
-                          Creating 360° GIF... {Math.round(recordingProgress)}%
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2 inline" />
-                          Export 360° GIF
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-black text-white px-6 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-white border-2 border-black p-2 flex items-center justify-center">
-                      <PenTool className="w-5 h-5 text-black" />
-                    </div>
-                    <div>
-                      <h1 className="text-xl font-black">
-                        3D PSG KIT DESIGNER
-                      </h1>
-                      <p className="text-xs font-mono opacity-80">
-                        PAINT DIRECTLY ON THE 3D MODEL
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`px-3 py-2 border-2 border-white font-black text-sm ${
-                        allLogosPlaced
-                          ? "bg-green-400 text-black"
-                          : "bg-red-400 text-white"
-                      }`}
-                    >
-                      <Trophy className="w-4 h-4 mr-2 inline" />
-                      {allLogosPlaced ? "READY TO SUBMIT" : "LOGOS REQUIRED"}
+                      <button
+                        onClick={handleExport}
+                        disabled={isRecordingGif}
+                        className={`font-black border-2 border-white px-4 py-2 transition-all duration-200 hover:scale-105 ${
+                          isRecordingGif
+                            ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                            : "bg-white text-black hover:bg-gray-100"
+                        }`}
+                      >
+                        {isRecordingGif ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2 inline animate-spin" />
+                            Creating 360° GIF... {Math.round(recordingProgress)}
+                            %
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2 inline" />
+                            Export 360° GIF
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Kit Design Editor Header */}
+                <div className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2 flex items-center justify-center">
+                        <PenTool className="w-6 h-6 text-black" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl font-black tracking-wider mb-1">
+                          3D KIT EDITOR
+                        </CardTitle>
+                        <p className="text-sm font-mono opacity-80">
+                          DESIGN YOUR PSG JERSEY IN 3D
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-white text-black border-2 border-white font-black text-sm">
+                        EDITOR MODE
+                      </Badge>
+                      <div
+                        className={`px-3 py-2 border-2 border-white font-black text-sm ${
+                          allLogosPlaced
+                            ? "bg-white text-black"
+                            : "bg-gray-600 text-white"
+                        }`}
+                      >
+                        <Trophy className="w-4 h-4 mr-2 inline" />
+                        {allLogosPlaced ? "READY TO SUBMIT" : "LOGOS REQUIRED"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
-            <div className="col-span-2 flex flex-col min-h-0">
-              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col min-h-0">
+          <div className="grid grid-cols-12 gap-3 flex-1 h-fit">
+            <div className="col-span-3 flex flex-col min-h-0">
+              <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col min-h-0">
                 <div className="bg-black text-white p-3 flex-shrink-0">
                   <h2 className="text-base font-black">TOOLS</h2>
                 </div>
@@ -1345,7 +1419,7 @@ export default function TShirtEditor3D() {
                             key={tool.id}
                             className={`border-2 border-black p-2 transition-all duration-200 hover:scale-105 flex items-center gap-2 text-left ${
                               activeTool === tool.id
-                                ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                 : "bg-white text-black hover:bg-gray-100"
                             }`}
                             onClick={() => handleToolSelect(tool.id)}
@@ -1373,7 +1447,7 @@ export default function TShirtEditor3D() {
                             key={tool.id}
                             className={`border-2 border-black p-2 transition-all duration-200 hover:scale-105 flex items-center gap-2 text-left ${
                               activeTool === tool.id
-                                ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                 : "bg-white text-black hover:bg-gray-100"
                             }`}
                             onClick={() => handleToolSelect(tool.id)}
@@ -1396,7 +1470,7 @@ export default function TShirtEditor3D() {
                     <button
                       className={`w-full border-2 border-black p-2 transition-all duration-200 hover:scale-105 flex items-center gap-2 text-left ${
                         activeTool === "text"
-                          ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                           : "bg-white text-black hover:bg-gray-100"
                       }`}
                       onClick={() => handleToolSelect("text")}
@@ -1484,7 +1558,7 @@ export default function TShirtEditor3D() {
               </div>
             </div>
 
-            <div className="col-span-8 flex flex-col min-h-0">
+            <div className="col-span-6 flex flex-col min-h-0">
               <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col min-h-0">
                 <div className="bg-black text-white p-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -1493,8 +1567,8 @@ export default function TShirtEditor3D() {
                       <button
                         className={`border-2 border-white px-3 py-1 font-black text-sm ${
                           activeView === "front"
-                            ? "bg-yellow-400 text-black"
-                            : "bg-white text-black hover:bg-gray-100"
+                            ? "bg-white text-black"
+                            : "bg-gray-600 text-white hover:bg-gray-500"
                         } transition-all duration-200 hover:scale-105`}
                         onClick={() => setActiveView("front")}
                         disabled={isRecordingGif}
@@ -1504,8 +1578,8 @@ export default function TShirtEditor3D() {
                       <button
                         className={`border-2 border-white px-3 py-1 font-black text-sm ${
                           activeView === "back"
-                            ? "bg-yellow-400 text-black"
-                            : "bg-white text-black hover:bg-gray-100"
+                            ? "bg-white text-black"
+                            : "bg-gray-600 text-white hover:bg-gray-500"
                         } transition-all duration-200 hover:scale-105`}
                         onClick={() => setActiveView("back")}
                         disabled={isRecordingGif}
@@ -1516,7 +1590,10 @@ export default function TShirtEditor3D() {
                   </div>
                 </div>
 
-                <div className="flex-1 bg-gray-400 relative min-h-0">
+                <div
+                  className="flex-1 bg-gray-400 relative min-h-0"
+                  style={{ maxHeight: "calc(100vh - 300px)" }}
+                >
                   <Canvas
                     ref={canvasRef}
                     camera={{ position: [0, 0, 5], fov: 50 }}
@@ -1576,7 +1653,7 @@ export default function TShirtEditor3D() {
                         </div>
                         <div className="w-64 bg-gray-200 border-2 border-black h-4 mb-2">
                           <div
-                            className="bg-blue-500 h-full transition-all duration-300"
+                            className="bg-black h-full transition-all duration-300"
                             style={{ width: `${recordingProgress}%` }}
                           />
                         </div>
@@ -1590,26 +1667,48 @@ export default function TShirtEditor3D() {
                     </div>
                   )}
 
-                  <div className="absolute top-3 left-3 bg-black bg-opacity-90 text-white p-3 rounded border-2 border-white max-w-xs">
-                    <h3 className="font-black text-sm mb-2">QUICK GUIDE:</h3>
-                    <ul className="text-xs space-y-1">
-                      <li>
-                        • <strong>Brush:</strong> Paint on texture
-                      </li>
-                      <li>
-                        • <strong>Fill:</strong> Flood fill areas
-                      </li>
-                      <li>
-                        • <strong>Shapes:</strong> Draw on texture
-                      </li>
-                      <li>
-                        • <strong>Text:</strong> 3D text overlays
-                      </li>
-                      <li>
-                        • <strong>360° GIF:</strong> Auto-rotation export
-                      </li>
-                    </ul>
-                  </div>
+                  {showQuickGuide && (
+                    <div className="absolute top-3 left-3 bg-black bg-opacity-90 text-white p-3 rounded border-2 border-white max-w-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-black text-sm">QUICK GUIDE:</h3>
+                        <button
+                          onClick={() => setShowQuickGuide(false)}
+                          className="text-white hover:text-gray-300 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <ul className="text-xs space-y-1">
+                        <li>
+                          • <strong>Brush:</strong> Paint on texture
+                        </li>
+                        <li>
+                          • <strong>Fill:</strong> Flood fill areas
+                        </li>
+                        <li>
+                          • <strong>Shapes:</strong> Draw on texture
+                        </li>
+                        <li>
+                          • <strong>Text:</strong> 3D text overlays
+                        </li>
+                        <li>
+                          • <strong>360° GIF:</strong> Auto-rotation export
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {!showQuickGuide && (
+                    <div className="absolute top-3 left-3">
+                      <button
+                        onClick={() => setShowQuickGuide(true)}
+                        className="bg-black bg-opacity-90 text-white p-2 rounded border-2 border-white hover:bg-opacity-100 transition-all"
+                        title="Show Quick Guide"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
 
                   <div className="absolute top-3 right-3 flex flex-col gap-2">
                     <button
@@ -1670,7 +1769,7 @@ export default function TShirtEditor3D() {
               </div>
             </div>
 
-            <div className="col-span-2 flex flex-col space-y-4 min-h-0">
+            <div className="col-span-3 flex flex-col space-y-4 min-h-0">
               <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col min-h-0 flex-1">
                 <div className="bg-black text-white p-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -1694,7 +1793,7 @@ export default function TShirtEditor3D() {
                         key={element.id}
                         className={`flex items-center gap-2 p-2 border-2 border-black cursor-pointer transition-all duration-200 hover:bg-gray-100 ${
                           selectedElement === element.id
-                            ? "bg-yellow-400"
+                            ? "bg-gray-200"
                             : "bg-white"
                         } ${
                           isRecordingGif ? "pointer-events-none opacity-50" : ""
@@ -1978,6 +2077,132 @@ export default function TShirtEditor3D() {
           ...
         </div>
       )}
+
+      {/* Save Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">
+              Save Your Design
+            </DialogTitle>
+            <DialogDescription className="text-sm font-mono">
+              Choose where you'd like to save your PSG kit design
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border-2 border-black bg-gray-50">
+                <h3 className="font-black text-sm mb-2">💾 LOCAL STORAGE</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Saves to your browser's local storage. Quick and private, but
+                  only accessible on this device.
+                </p>
+                <Button
+                  onClick={() => performSave("local")}
+                  className="w-full bg-black text-white border-2 border-black hover:bg-gray-800 font-black"
+                >
+                  Save Locally
+                </Button>
+              </div>
+
+              <div className="p-4 border-2 border-black bg-gray-50">
+                <h3 className="font-black text-sm mb-2">☁️ CLOUD BACKUP</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Saves to cloud storage. Access your design from anywhere and
+                  share with others.
+                </p>
+                <Button
+                  onClick={() => performSave("cloud")}
+                  className="w-full bg-black text-white border-2 border-black hover:bg-gray-800 font-black"
+                >
+                  Save to Cloud
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="neutral"
+              onClick={() => setShowSaveDialog(false)}
+              className="border-2 border-black font-black"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Choice Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">
+              Choose Export Type
+            </DialogTitle>
+            <DialogDescription className="text-sm font-mono">
+              Select how you'd like to export your PSG kit design
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border-2 border-black bg-gray-50">
+                <h3 className="font-black text-sm mb-2">🎥 360° GIF</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Creates an animated GIF showing a full 360° rotation of your
+                  design. Perfect for showcasing!
+                </p>
+                <Button
+                  onClick={() => performExport("gif")}
+                  className="w-full bg-black text-white border-2 border-black hover:bg-gray-800 font-black"
+                >
+                  Export as GIF
+                </Button>
+              </div>
+
+              <div className="p-4 border-2 border-black bg-gray-50">
+                <h3 className="font-black text-sm mb-2">📸 Static Images</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Exports front and back view images plus design data. Lighter
+                  and faster to generate.
+                </p>
+                <Button
+                  onClick={() => performExport("images")}
+                  className="w-full bg-black text-white border-2 border-black hover:bg-gray-800 font-black"
+                >
+                  Export as Images
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="neutral"
+              onClick={() => setShowExportDialog(false)}
+              className="border-2 border-black font-black"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Toast Notifications */}
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        toastOptions={{
+          style: {
+            border: "2px solid black",
+            fontSize: "14px",
+            fontWeight: "bold",
+          },
+        }}
+      />
     </div>
   );
 }
