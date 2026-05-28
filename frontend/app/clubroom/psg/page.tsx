@@ -88,10 +88,25 @@ interface NFTAuction {
 function PSGClubRoom() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const team = ((searchParams.get("team") || "ARG").toUpperCase()) as "ARG" | "BRA" | "FRA";
-  const teamLabel = ({ ARG: "ARGENTINA", BRA: "BRAZIL", FRA: "FRANCE" } as const)[team] || "ARGENTINA";
-  const teamFlag = ({ ARG: "🇦🇷", BRA: "🇧🇷", FRA: "🇫🇷" } as const)[team] || "🇦🇷";
-  const teamLogo = ({ ARG: "/logos/argentina.png", BRA: "/logos/brazil.png", FRA: "/logos/france.png" } as const)[team];
+  const team = (searchParams.get("team") || "argentina").toLowerCase();
+  const teamLabel = team.replace(/-/g, " ").toUpperCase();
+  const flagMap: Record<string, string> = {
+    argentina: "🇦🇷", brazil: "🇧🇷", france: "🇫🇷", germany: "🇩🇪",
+    spain: "🇪🇸", england: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", portugal: "🇵🇹", netherlands: "🇳🇱",
+    japan: "🇯🇵", "south-korea": "🇰🇷", mexico: "🇲🇽", "united-states": "🇺🇸",
+    canada: "🇨🇦", morocco: "🇲🇦", senegal: "🇸🇳", colombia: "🇨🇴",
+    uruguay: "🇺🇾", croatia: "🇭🇷", switzerland: "🇨🇭", belgium: "🇧🇪",
+    australia: "🇦🇺", "saudi-arabia": "🇸🇦", iran: "🇮🇷", ecuador: "🇪🇨",
+    ghana: "🇬🇭", qatar: "🇶🇦", "ivory-coast": "🇨🇮", norway: "🇳🇴",
+    sweden: "🇸🇪", austria: "🇦🇹", scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", turkiye: "🇹🇷",
+    algeria: "🇩🇿", egypt: "🇪🇬", tunisia: "🇹🇳", "south-africa": "🇿🇦",
+    "dr-congo": "🇨🇩", iraq: "🇮🇶", jordan: "🇯🇴", uzbekistan: "🇺🇿",
+    paraguay: "🇵🇾", panama: "🇵🇦", haiti: "🇭🇹", "new-zealand": "🇳🇿",
+    "cape-verde": "🇨🇻", "bosnia-herzegovina": "🇧🇦", curacao: "🇨🇼",
+    czechia: "🇨🇿",
+  };
+  const teamFlag = flagMap[team] || "⚽";
+  const teamLogo = `/logos/${team}.png`;
   const [activeSection, setActiveSection] = useState("overview");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);

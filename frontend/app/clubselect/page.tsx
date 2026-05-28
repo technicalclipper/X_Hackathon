@@ -4,93 +4,100 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import {
-  X,
-  Shield,
-  Trophy,
-  Lock,
-  Unlock,
-  Coins,
-  ArrowLeft,
-  Users,
-  Crown,
-} from "lucide-react";
+import { Lock, Unlock, Coins, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useWallet } from "@/components/WalletProvider";
 
-interface Club {
+interface Team {
   id: string;
   name: string;
   shortName: string;
-  color: string;
-  tokensRequired: number;
-  isAvailable: boolean;
-  memberCount: number;
-  description: string;
   logoPath: string;
+  isAvailable: boolean;
 }
+
+const ALL_TEAMS = [
+  { id: "algeria",            name: "ALGERIA",            shortName: "ALG" },
+  { id: "argentina",          name: "ARGENTINA",          shortName: "ARG" },
+  { id: "australia",          name: "AUSTRALIA",          shortName: "AUS" },
+  { id: "austria",            name: "AUSTRIA",            shortName: "AUT" },
+  { id: "belgium",            name: "BELGIUM",            shortName: "BEL" },
+  { id: "bosnia-herzegovina", name: "BOSNIA HERZEGOVINA", shortName: "BIH" },
+  { id: "brazil",             name: "BRAZIL",             shortName: "BRA" },
+  { id: "canada",             name: "CANADA",             shortName: "CAN" },
+  { id: "cape-verde",         name: "CAPE VERDE",         shortName: "CPV" },
+  { id: "colombia",           name: "COLOMBIA",           shortName: "COL" },
+  { id: "croatia",            name: "CROATIA",            shortName: "CRO" },
+  { id: "curacao",            name: "CURAÇAO",            shortName: "CUW" },
+  { id: "czechia",            name: "CZECHIA",            shortName: "CZE" },
+  { id: "dr-congo",           name: "DR CONGO",           shortName: "COD" },
+  { id: "ecuador",            name: "ECUADOR",            shortName: "ECU" },
+  { id: "egypt",              name: "EGYPT",              shortName: "EGY" },
+  { id: "england",            name: "ENGLAND",            shortName: "ENG" },
+  { id: "france",             name: "FRANCE",             shortName: "FRA" },
+  { id: "germany",            name: "GERMANY",            shortName: "GER" },
+  { id: "ghana",              name: "GHANA",              shortName: "GHA" },
+  { id: "haiti",              name: "HAITI",              shortName: "HAI" },
+  { id: "iran",               name: "IRAN",               shortName: "IRN" },
+  { id: "iraq",               name: "IRAQ",               shortName: "IRQ" },
+  { id: "ivory-coast",        name: "IVORY COAST",        shortName: "CIV" },
+  { id: "japan",              name: "JAPAN",              shortName: "JPN" },
+  { id: "jordan",             name: "JORDAN",             shortName: "JOR" },
+  { id: "mexico",             name: "MEXICO",             shortName: "MEX" },
+  { id: "morocco",            name: "MOROCCO",            shortName: "MAR" },
+  { id: "netherlands",        name: "NETHERLANDS",        shortName: "NED" },
+  { id: "new-zealand",        name: "NEW ZEALAND",        shortName: "NZL" },
+  { id: "norway",             name: "NORWAY",             shortName: "NOR" },
+  { id: "panama",             name: "PANAMA",             shortName: "PAN" },
+  { id: "paraguay",           name: "PARAGUAY",           shortName: "PAR" },
+  { id: "portugal",           name: "PORTUGAL",           shortName: "POR" },
+  { id: "qatar",              name: "QATAR",              shortName: "QAT" },
+  { id: "saudi-arabia",       name: "SAUDI ARABIA",       shortName: "KSA" },
+  { id: "scotland",           name: "SCOTLAND",           shortName: "SCO" },
+  { id: "senegal",            name: "SENEGAL",            shortName: "SEN" },
+  { id: "south-africa",       name: "SOUTH AFRICA",       shortName: "RSA" },
+  { id: "south-korea",        name: "SOUTH KOREA",        shortName: "KOR" },
+  { id: "spain",              name: "SPAIN",              shortName: "ESP" },
+  { id: "sweden",             name: "SWEDEN",             shortName: "SWE" },
+  { id: "switzerland",        name: "SWITZERLAND",        shortName: "SUI" },
+  { id: "tunisia",            name: "TUNISIA",            shortName: "TUN" },
+  { id: "turkiye",            name: "TÜRKİYE",            shortName: "TUR" },
+  { id: "united-states",      name: "UNITED STATES",      shortName: "USA" },
+  { id: "uruguay",            name: "URUGUAY",            shortName: "URU" },
+  { id: "uzbekistan",         name: "UZBEKISTAN",         shortName: "UZB" },
+];
 
 export default function ClubSelect() {
   const router = useRouter();
   const { fanBalances, isConnected, isConnecting } = useWallet();
 
-  const argBalance = isConnected ? parseFloat(fanBalances.ARG) || 0 : 0;
-  const braBalance = isConnected ? parseFloat(fanBalances.BRA) || 0 : 0;
-  const fraBalance = isConnected ? parseFloat(fanBalances.FRA) || 0 : 0;
+  const hasFanToken =
+    isConnected &&
+    (parseFloat(fanBalances.ARG) >= 1 ||
+      parseFloat(fanBalances.BRA) >= 1 ||
+      parseFloat(fanBalances.FRA) >= 1);
 
-  const clubs: Club[] = [
-    {
-      id: "ARG",
-      name: "ARGENTINA",
-      shortName: "ARG",
-      color: "bg-sky-500",
-      tokensRequired: 1,
-      isAvailable: argBalance >= 1,
-      memberCount: 41000,
-      description: "Reigning World Cup champions",
-      logoPath: "/logos/argentina.png",
-    },
-    {
-      id: "BRA",
-      name: "BRAZIL",
-      shortName: "BRA",
-      color: "bg-yellow-400",
-      tokensRequired: 1,
-      isAvailable: braBalance >= 1,
-      memberCount: 52000,
-      description: "Five-time World Cup winners",
-      logoPath: "/logos/brazil.png",
-    },
-    {
-      id: "FRA",
-      name: "FRANCE",
-      shortName: "FRA",
-      color: "bg-blue-700",
-      tokensRequired: 1,
-      isAvailable: fraBalance >= 1,
-      memberCount: 38000,
-      description: "Les Bleus on the world stage",
-      logoPath: "/logos/france.png",
-    },
-  ];
+  const teams: Team[] = ALL_TEAMS.map((t) => ({
+    ...t,
+    logoPath: `/logos/${t.id}.png`,
+    isAvailable: hasFanToken,
+  }));
 
-  const handleEnterClub = (clubId: string) => {
-    const club = clubs.find((c) => c.id === clubId);
-    if (club?.isAvailable) {
-      router.push(`/clubroom/psg?team=${clubId}`);
+  const handleEnterTeam = (teamId: string) => {
+    if (hasFanToken) {
+      router.push(`/clubroom/psg?team=${teamId}`);
     }
   };
 
-  const handleBack = () => {
-    router.push("/");
-  };
+  const totalFanTokens =
+    parseFloat(fanBalances.ARG || "0") +
+    parseFloat(fanBalances.BRA || "0") +
+    parseFloat(fanBalances.FRA || "0");
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-screen-2xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
@@ -100,12 +107,12 @@ export default function ClubSelect() {
         >
           <Card className="shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-border p-0">
             <CardHeader className="bg-black text-white p-0">
-              {/* Top Navigation Bar */}
+              {/* Top Nav */}
               <div className="bg-gray-900 px-6 py-3 border-b-2 border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Button
-                      onClick={handleBack}
+                      onClick={() => router.push("/")}
                       variant="noShadow"
                       className="bg-white text-black border-2 border-border hover:bg-gray-100 p-2"
                     >
@@ -117,193 +124,115 @@ export default function ClubSelect() {
                       </span>
                     </div>
                     <span className="text-gray-400 font-mono text-sm">
-                      / WORLD CUP TEAMS
+                      / WORLD CUP 2026
                     </span>
                   </div>
 
+                  {/* Token balance chip */}
                   <div className="flex items-center gap-2 bg-main text-black px-3 py-2 border-2 border-border font-black text-sm">
                     <Coins className="w-4 h-4" />
-                    <span>TOKENS</span>
-                    {!isConnected && !isConnecting && (
-                      <span className="text-xs opacity-70">
-                        (Connect Wallet)
-                      </span>
-                    )}
-                    {isConnecting && (
-                      <span className="text-xs opacity-70">
-                        (Connecting...)
-                      </span>
+                    {isConnecting ? (
+                      <span className="text-xs opacity-70">Connecting...</span>
+                    ) : isConnected ? (
+                      <span>{totalFanTokens.toFixed(0)} FAN TOKENS</span>
+                    ) : (
+                      <span className="text-xs opacity-70">Connect Wallet</span>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Main Header Content */}
+              {/* Title */}
               <div className="px-6 py-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-3xl font-black tracking-wider mb-2">
-                      PICK YOUR WORLD CUP TEAM
-                    </CardTitle>
-                    <p className="text-sm font-mono opacity-80">
-                      ENTER YOUR WORLD CUP HQ
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {clubs.map((club) => (
-                      <motion.div key={club.id} className="relative group" whileHover={{ scale: 1.1 }}>
-                        <div className="flex items-center gap-2 bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] px-3 py-2">
-                          <div className="w-5 h-5 flex items-center justify-center bg-gray-50 border border-black p-0.5">
-                            <Image src={club.logoPath} alt={club.shortName} width={16} height={16} className="object-contain max-w-full max-h-full" />
-                          </div>
-                          <span className="text-sm font-black text-black min-w-[16px] text-center">
-                            {isConnecting
-                              ? "…"
-                              : isConnected
-                              ? parseFloat(fanBalances[club.id as 'ARG' | 'BRA' | 'FRA'] || "0").toFixed(1)
-                              : "0"}
-                          </span>
-                        </div>
-                        <motion.div
-                          className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-black text-white px-3 py-2 border-2 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] text-sm font-bold whitespace-nowrap z-50"
-                          initial={{ opacity: 0, y: -10 }}
-                          whileHover={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {club.shortName} TOKENS:{" "}
-                          {isConnecting ? "Connecting…" : isConnected
-                            ? parseFloat(fanBalances[club.id as 'ARG' | 'BRA' | 'FRA'] || "0").toFixed(2)
-                            : "Not Connected"}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black border-l border-t border-white rotate-45 translate-y-1"></div>
-                        </motion.div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
+                <CardTitle className="text-3xl font-black tracking-wider mb-1">
+                  PICK YOUR WORLD CUP TEAM
+                </CardTitle>
+                <p className="text-sm font-mono opacity-80">
+                  {teams.length} NATIONS · HOLD ANY FAN TOKEN TO ENTER
+                </p>
               </div>
             </CardHeader>
           </Card>
         </motion.div>
 
-        {/* Club Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {clubs.map((club, index) => (
+        {/* Team Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 mb-8">
+          {teams.map((team, index) => (
             <motion.div
-              key={club.id}
-              initial={{ y: 50, opacity: 0 }}
+              key={team.id}
+              initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: index * 0.1, duration: 0.6 }}
+              transition={{ delay: index * 0.02, duration: 0.4 }}
             >
               <Card
                 className={`
-                  shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] 
-                  border-4 border-border 
-                  cursor-pointer 
-                  transition-all duration-300 
-                  ${
-                    club.isAvailable
-                      ? "hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:scale-105"
-                      : "opacity-60"
+                  shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
+                  border-2 border-border
+                  cursor-pointer
+                  transition-all duration-200
+                  ${team.isAvailable
+                    ? "hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:scale-105"
+                    : "opacity-50 cursor-not-allowed"
                   }
                 `}
-                onClick={() => handleEnterClub(club.id)}
+                onClick={() => handleEnterTeam(team.id)}
               >
-                <CardContent className="p-4 text-center space-y-4">
-                  {/* Large Logo with Shine Effect */}
+                <CardContent className="p-3 text-center space-y-2">
+                  {/* Logo */}
                   <div className="flex justify-center">
                     <motion.div
-                      className="relative w-48 h-48 bg-white border-4 border-black flex items-center justify-center p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden group"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.2 }}
+                      className="relative w-16 h-16 bg-white border-2 border-black flex items-center justify-center p-2 overflow-hidden group"
+                      whileHover={team.isAvailable ? { scale: 1.05 } : {}}
                     >
                       <Image
-                        src={club.logoPath}
-                        alt={`${club.name} logo`}
-                        width={160}
-                        height={160}
+                        src={team.logoPath}
+                        alt={team.name}
+                        width={56}
+                        height={56}
                         className="object-contain max-w-full max-h-full z-10 relative"
                       />
-
-                      {/* Glossy Base Layer */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/5" />
-
-                      {/* Main Shine Effect */}
+                      {/* Shine */}
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
                         initial={{ x: "-100%", rotate: 25 }}
-                        whileHover={{
-                          x: "100%",
-                          transition: {
-                            duration: 0.8,
-                            ease: "easeInOut",
-                          },
-                        }}
-                        style={{
-                          width: "150%",
-                          height: "150%",
-                          top: "-25%",
-                          left: "-25%",
-                        }}
-                      />
-
-                      {/* Secondary Shine */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent"
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                      />
-
-                      {/* Hover Glow */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-br from-blue-100/20 to-purple-100/20"
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
+                        whileHover={{ x: "100%", transition: { duration: 0.6, ease: "easeInOut" } }}
+                        style={{ width: "150%", height: "150%", top: "-25%", left: "-25%" }}
                       />
                     </motion.div>
                   </div>
 
-                  {/* Club Name */}
-                  <div>
-                    <h3 className="text-lg font-black text-foreground">
-                      {club.shortName}
-                    </h3>
-                  </div>
+                  {/* Name */}
+                  <p className="text-xs font-black text-foreground leading-tight">
+                    {team.name}
+                  </p>
 
-                  {/* Status */}
-                  <div className="space-y-2">
-                    {club.isAvailable ? (
-                      <motion.div
-                        className="bg-main text-black px-3 py-2 border-3 border-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] font-black text-sm"
-                        whileHover={{ scale: 1.02 }}
-                      >
-                        <Unlock className="w-3 h-3 inline mr-1" />
-                        ENTER ROOM
-                      </motion.div>
-                    ) : (
-                      <div className="bg-red-500 text-white px-3 py-2 border-3 border-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] font-black text-sm">
-                        <Lock className="w-3 h-3 inline mr-1" />
-                        NEED {club.shortName} TOKEN
-                      </div>
-                    )}
-                  </div>
+                  {/* Status badge */}
+                  {team.isAvailable ? (
+                    <div className="bg-main text-black px-2 py-1 border border-border font-black text-xs">
+                      <Unlock className="w-2.5 h-2.5 inline mr-1" />
+                      ENTER
+                    </div>
+                  ) : (
+                    <div className="bg-red-500 text-white px-2 py-1 border border-border font-black text-xs">
+                      <Lock className="w-2.5 h-2.5 inline mr-1" />
+                      LOCKED
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        {/* Simple FANVAS Footer */}
+        {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
+          transition={{ delay: 1.5, duration: 0.6 }}
           className="mt-8 text-center"
         >
           <p className="text-xs font-bold text-gray-600">
-            POWERED BY FANVAS · ON X LAYER
+            POWERED BY FANVAS · WORLD CUP 2026 · ON X LAYER
           </p>
         </motion.div>
       </div>
