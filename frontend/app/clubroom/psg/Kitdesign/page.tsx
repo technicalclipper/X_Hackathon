@@ -481,7 +481,7 @@ export default function KitDesignPage() {
                             </span>
                           </div>
                           <span className="text-gray-400 font-mono text-sm">
-                            / CLUB ROOMS / FAN / KIT DESIGN
+                            / WORLD CUP TEAMS / KIT DESIGN
                           </span>
                         </div>
 
@@ -554,11 +554,11 @@ export default function KitDesignPage() {
                           <div>
                             <CardTitle className="text-3xl font-black tracking-wider mb-2">
                               {selectedPool
-                                ? `${selectedPool.match_id} - JERSEY DESIGN`
-                                : "FAN JERSEY DESIGN"}
+                                ? `${selectedPool.match_id} - WORLD CUP KIT`
+                                : "WORLD CUP KIT DESIGN"}
                             </CardTitle>
                             <p className="text-sm font-mono opacity-80">
-                              SUBMIT YOUR DESIGNS AND VOTE FOR THE BEST
+                              SUBMIT YOUR WORLD CUP DESIGNS · COMMUNITY VOTES WIN
                             </p>
                             {selectedPool && (
                               <p className="text-xs font-mono opacity-60 mt-1">
@@ -959,7 +959,7 @@ export default function KitDesignPage() {
                             <SelectContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                               <SelectGroup>
                                 <SelectLabel className="font-black text-black">
-                                  Jersey Pools
+                                  World Cup Pools
                                 </SelectLabel>
                                 {isLoading ? (
                                   <SelectItem value="loading" disabled>
@@ -1017,7 +1017,7 @@ export default function KitDesignPage() {
                       SUBMISSIONS
                     </CardTitle>
                     <p className="text-gray-300 font-mono text-sm">
-                      VOTE FOR YOUR FAVORITE DESIGNS
+                      VOTE FOR YOUR FAVORITE WORLD CUP DESIGNS
                     </p>
                   </CardHeader>
                   <CardContent className="p-6">
@@ -1250,7 +1250,7 @@ export default function KitDesignPage() {
               >
                 <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6">
                   <h2 className="text-2xl font-black text-black mb-4">
-                    Contest Guidelines
+                    World Cup Design Guidelines
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -1259,7 +1259,7 @@ export default function KitDesignPage() {
                       </h3>
                       <ul className="text-gray-700 font-bold space-y-1">
                         <li>• Design must be original</li>
-                        <li>• Include Fan team colors</li>
+                        <li>• Include your nation's colors</li>
                         <li>• High resolution (minimum 1920x1080)</li>
                         <li>• Submit in PNG or JPG format</li>
                       </ul>

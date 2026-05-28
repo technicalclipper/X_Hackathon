@@ -109,10 +109,9 @@ function PSGClubRoom() {
   const contests: Contest[] = [
     {
       id: "1",
-      title: "PSG Third Kit Design",
-      description: "Design the next PSG third kit",
+      title: "World Cup Kit Design",
+      description: "Design the official World Cup 2026 kit for your nation",
       reward: "Custom 1/1 NFT + Bragging Rights",
-
       deadline: "5 days",
       participants: 234,
       type: "Design",
@@ -120,10 +119,9 @@ function PSGClubRoom() {
     },
     {
       id: "2",
-      title: "Parc des Princes Tifo",
-      description: "Create a tifo for the next home match",
+      title: "Stadium Tifo Contest",
+      description: "Create a tifo for the World Cup final",
       reward: "Custom 1/1 NFT + Bragging Rights",
-
       deadline: "12 days",
       participants: 89,
       type: "Art",
@@ -131,8 +129,8 @@ function PSGClubRoom() {
     },
     {
       id: "3",
-      title: "Match Day Poster & Tickets",
-      description: "Design poster & Tickets",
+      title: "World Cup Poster & Tickets",
+      description: "Design match day poster & collectible tickets",
       reward: "Custom 1/1 NFT + Bragging Rights",
       deadline: "3 days",
       participants: 156,
@@ -142,9 +140,8 @@ function PSGClubRoom() {
     {
       id: "4",
       title: "Fan Footage Contest",
-      description: "Best fan video from last match",
+      description: "Best fan video from the World Cup",
       reward: "Custom 1/1 NFT + Bragging Rights",
-
       deadline: "7 days",
       participants: 67,
       type: "Video",
@@ -155,7 +152,7 @@ function PSGClubRoom() {
   const nftAuctions: NFTAuction[] = [
     {
       id: "1",
-      title: "Neymar Goal Celebration",
+      title: "World Cup Trophy Moment",
       creator: "FanArt_Master",
       currentBid: "2.5 OKB",
       timeLeft: "2h 34m",
@@ -164,8 +161,8 @@ function PSGClubRoom() {
     },
     {
       id: "2",
-      title: "Parc des Princes Sunset",
-      creator: "PSG_Photographer",
+      title: "Stadium Sunset — World Cup Final",
+      creator: "WorldCup_Photographer",
       currentBid: "1.8 OKB",
       timeLeft: "5h 12m",
       bidders: 8,
@@ -173,7 +170,7 @@ function PSGClubRoom() {
     },
     {
       id: "3",
-      title: "Messi Magic Moment",
+      title: "Golden Boot Magic Moment",
       creator: "Digital_Artist",
       currentBid: "3.2 OKB",
       timeLeft: "1h 45m",
@@ -238,8 +235,8 @@ function PSGClubRoom() {
     {
       category: "Contests",
       items: [
-        { label: "Third Kit Design", icon: PenTool, badge: "5 days left" },
-        { label: "Tifo Contest", icon: Palette, badge: "12 days left" },
+        { label: "World Cup Kit", icon: PenTool, badge: "5 days left" },
+        { label: "Stadium Tifo", icon: Palette, badge: "12 days left" },
         { label: "Match Posters", icon: FileText, badge: "3 days left" },
         { label: "Fan Footage", icon: Camera, badge: "7 days left" },
       ],
@@ -263,9 +260,9 @@ function PSGClubRoom() {
     {
       category: "Quick Access",
       items: [
-        { label: "Fan Community", icon: Users, badge: "1,247 online" },
+        { label: "World Cup Fans", icon: Users, badge: "1,247 online" },
         { label: "Token Rewards", icon: Coins, badge: "125 available" },
-        { label: "Club Stats", icon: BarChart3, badge: "Live" },
+        { label: "Live Standings", icon: BarChart3, badge: "Live" },
       ],
     },
   ];
@@ -387,7 +384,7 @@ function PSGClubRoom() {
                         <span>RANK: #42</span>
                       </div>
                       <div className="bg-white text-black px-3 py-2 border-2 border-border font-black text-sm">
-                        <span>1,247 FANS ONLINE</span>
+                        <span>1,247 WORLD CUP FANS</span>
                       </div>
                     </div>
                   </div>
@@ -406,7 +403,7 @@ function PSGClubRoom() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {[
                 { label: "Active Contests", value: "5", icon: Trophy },
-                { label: "Active Fans", value: "1,247", icon: Users },
+                { label: "World Cup Fans", value: "1,247", icon: Users },
                 { label: "NFT Auctions", value: "12", icon: Gavel },
                 { label: "Your Rank", value: "#42", icon: Medal },
               ].map((stat, index) => (
@@ -652,7 +649,7 @@ function PSGClubRoom() {
                     <div>
                       <h3 className="text-xl font-black">NFT MARKETPLACE</h3>
                       <p className="text-sm text-gray-600 font-mono">
-                        BUY, SELL & TRADE WORLD CUP NFTs
+                        BUY, SELL & TRADE WORLD CUP 2026 NFTs
                       </p>
                     </div>
                   </div>

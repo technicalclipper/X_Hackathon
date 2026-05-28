@@ -28,28 +28,28 @@ export default function Home() {
   const [currentFeature, setCurrentFeature] = useState(0);
   useCanvasCursor();
   const features = [
-    { icon: Palette, text: "DESIGN FAN ART" },
-    { icon: Trophy, text: "CLUB ARTIFACTS" },
-    { icon: Users, text: "FAN COMMUNITY" },
+    { icon: Palette, text: "DESIGN WORLD CUP ART" },
+    { icon: Trophy, text: "WIN WORLD CUP NFTS" },
+    { icon: Users, text: "WORLD CUP FANS" },
     { icon: Coins, text: "EARN OKB TOKENS" },
   ];
 
   const clubs = [
-    "FC BARCELONA",
-    "JUVENTUS FC",
-    "AC MILAN",
-    "WORLD CUP TEAM",
-    "MANCHESTER CITY",
-    "ARSENAL FC",
+    "🇦🇷 ARGENTINA",
+    "🇧🇷 BRAZIL",
+    "🇫🇷 FRANCE",
+    "🏆 WORLD CUP 2026",
+    "⚽ X LAYER",
+    "🎨 FAN ART ON-CHAIN",
   ];
 
   // Terminal typing effect
   useEffect(() => {
     const messages = [
       "CONNECTING TO X LAYER NETWORK...",
-      "LOADING FAN ART STUDIO...",
-      "SYNCING WITH CLUB DATABASES...",
-      "READY FOR FAN CREATION >",
+      "LOADING WORLD CUP FAN ART STUDIO...",
+      "SYNCING ARGENTINA · BRAZIL · FRANCE...",
+      "READY FOR WORLD CUP CREATION >",
     ];
 
     let messageIndex = 0;
@@ -191,7 +191,7 @@ export default function Home() {
                   transition={{ delay: 0.8 }}
                 >
                   <span className="px-4 py-2 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    DEMOCRATIZING FAN ART
+                    WORLD CUP FAN ART · ON-CHAIN
                   </span>
                 </motion.div>
               </motion.div>
@@ -224,9 +224,9 @@ export default function Home() {
                     className="text-xl font-black px-12 py-6 text-main-foreground bg-main hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 group relative overflow-hidden"
                   >
                     <span className="relative z-10 flex items-center gap-3">
-                      <Shield className="w-5 h-5 group-hover:animate-spin" />
-                      CREATE FAN ART
-                      <Heart className="w-5 h-5 group-hover:animate-pulse" />
+                      <Trophy className="w-5 h-5 group-hover:animate-spin" />
+                      JOIN THE WORLD CUP
+                      <Flag className="w-5 h-5 group-hover:animate-pulse" />
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-green-100/20 to-blue-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Button>
