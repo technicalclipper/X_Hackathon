@@ -150,12 +150,7 @@ function TShirtModel({
   const [lastPaintPosition, setLastPaintPosition] =
     useState<THREE.Vector2 | null>(null);
 
-  let gltf;
-  try {
-    gltf = useGLTF("/tshirt/source/Tshirt.glb");
-  } catch (error) {
-    console.warn("T-shirt model not found, using fallback");
-  }
+  const gltf = useGLTF("/tshirt/source/Tshirt.glb");
 
   useFrame((state, delta) => {
     if (meshRef.current) {
