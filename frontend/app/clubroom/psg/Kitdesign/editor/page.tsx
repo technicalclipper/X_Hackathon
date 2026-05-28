@@ -371,7 +371,7 @@ function TShirtModel({
   if (gltf && gltf.scene) {
     const tshirtScene = gltf.scene.clone();
 
-    tshirtScene.traverse((child) => {
+    tshirtScene.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh) {
         if (child.material) {
           const material = child.material.clone();
