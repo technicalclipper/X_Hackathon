@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +60,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import GLBViewer from "@/components/3d/GLBViewer";
 
@@ -84,8 +85,12 @@ interface NFTAuction {
   imageUrl: string;
 }
 
-export default function PSGClubRoom() {
+function PSGClubRoom() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const team = ((searchParams.get("team") || "ARG").toUpperCase()) as "ARG" | "BRA" | "FRA";
+  const teamLabel = ({ ARG: "ARGENTINA", BRA: "BRAZIL", FRA: "FRANCE" } as const)[team] || "ARGENTINA";
+  const teamFlag = ({ ARG: "🇦🇷", BRA: "🇧🇷", FRA: "🇫🇷" } as const)[team] || "🇦🇷";
   const [activeSection, setActiveSection] = useState("overview");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
@@ -152,7 +157,7 @@ export default function PSGClubRoom() {
       id: "1",
       title: "Neymar Goal Celebration",
       creator: "FanArt_Master",
-      currentBid: "2.5 CHZ",
+      currentBid: "2.5 OKB",
       timeLeft: "2h 34m",
       bidders: 12,
       imageUrl: "/nft-placeholder.jpg",
@@ -161,7 +166,7 @@ export default function PSGClubRoom() {
       id: "2",
       title: "Parc des Princes Sunset",
       creator: "PSG_Photographer",
-      currentBid: "1.8 CHZ",
+      currentBid: "1.8 OKB",
       timeLeft: "5h 12m",
       bidders: 8,
       imageUrl: "/nft-placeholder.jpg",
@@ -170,7 +175,7 @@ export default function PSGClubRoom() {
       id: "3",
       title: "Messi Magic Moment",
       creator: "Digital_Artist",
-      currentBid: "3.2 CHZ",
+      currentBid: "3.2 OKB",
       timeLeft: "1h 45m",
       bidders: 15,
       imageUrl: "/nft-placeholder.jpg",
@@ -308,7 +313,7 @@ export default function PSGClubRoom() {
                         </span>
                       </div>
                       <span className="text-gray-400 font-mono text-sm">
-                        / CLUB ROOMS / PSG
+                        {`/ WORLD CUP TEAMS / ${team}`}
                       </span>
                     </div>
 
@@ -360,8 +365,8 @@ export default function PSGClubRoom() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-white border-2 border-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2 flex items-center justify-center">
                         <Image
-                          src="/logos/psg.png"
-                          alt="PSG Logo"
+                          src={`/logos/${team.toLowerCase()}.png`}
+                          alt={`${teamLabel} Logo`}
                           width={48}
                           height={48}
                           className="object-contain"
@@ -369,10 +374,10 @@ export default function PSGClubRoom() {
                       </div>
                       <div>
                         <CardTitle className="text-3xl font-black tracking-wider mb-2">
-                          PSG CLUB ROOM
+                          {teamFlag} {teamLabel} HQ
                         </CardTitle>
                         <p className="text-sm font-mono opacity-80">
-                          WELCOME TO THE PARC DES PRINCES CREATIVE SPACE
+                          {`WELCOME TO THE ${teamLabel} CREATIVE SPACE — X LAYER`}
                         </p>
                       </div>
                     </div>
@@ -441,7 +446,7 @@ export default function PSGClubRoom() {
                   ONGOING CONTESTS
                 </CardTitle>
                 <p className="text-gray-300 font-mono text-sm">
-                  JOIN THE COMPETITION AND SHOW YOUR PSG PRIDE
+                  {`JOIN THE COMPETITION AND SHOW YOUR ${teamLabel} PRIDE`}
                 </p>
               </CardHeader>
               <CardContent className="p-6">
@@ -647,7 +652,7 @@ export default function PSGClubRoom() {
                     <div>
                       <h3 className="text-xl font-black">NFT MARKETPLACE</h3>
                       <p className="text-sm text-gray-600 font-mono">
-                        BUY, SELL & TRADE PSG NFTs
+                        BUY, SELL & TRADE WORLD CUP NFTs
                       </p>
                     </div>
                   </div>
@@ -689,5 +694,13 @@ export default function PSGClubRoom() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PSGClubRoomPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+      <PSGClubRoom />
+    </Suspense>
   );
 }
