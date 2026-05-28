@@ -8,13 +8,21 @@ const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.20",
-    settings: { optimizer: { enabled: true, runs: 200 } },
+    compilers: [
+      {
+        version: "0.8.20",
+        settings: { optimizer: { enabled: true, runs: 200 }, evmVersion: "paris" },
+      },
+      {
+        version: "0.8.25",
+        settings: { optimizer: { enabled: true, runs: 200 }, evmVersion: "cancun" },
+      },
+    ],
   },
   networks: {
     xlayerTestnet: {
       url: "https://testrpc.xlayer.tech",
-      chainId: 195,
+      chainId: 1952,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },

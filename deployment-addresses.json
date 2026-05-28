@@ -1,0 +1,11 @@
+{
+  "network": "xlayer-testnet",
+  "chainId": 1952,
+  "deployedAt": "2026-05-28",
+  "contracts": {
+    "FanEngagementPool": "0xf569938CdcFa89D7a77a297b399ef1F68505421C",
+    "ArgentinaFanToken": "0x8945e2258C286fB0201DeD69bB7d9632eFC6571C",
+    "BrazilFanToken": "0x0E87334cE7557A7BC8B5b692d7Cc2cB1a85F4f3A",
+    "FranceFanToken": "0xe948985DEfB690301C0Fd774bBCE3b4aeeb0CA5C"
+  }
+}
