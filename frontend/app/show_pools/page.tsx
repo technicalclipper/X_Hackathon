@@ -69,15 +69,14 @@ export default function ShowPoolsPage() {
     poolDetails,
     
     // Loading states
-    isInitializing,
     isSubmitting,
     error: submitError,
     success,
-    
+
     // Transaction states
     txHash,
     submissionId,
-    
+
     // IPFS states
     selectedFile,
     uploadedCID,
@@ -85,16 +84,14 @@ export default function ShowPoolsPage() {
     uploadError,
     uploadProgress,
     fileValidation,
-    
+
     // Functions
-    initializeContract,
     submitToPool,
     resetForm,
-    connectWallet,
     handlePoolSelect,
     formatDate: formatPoolDate,
     getPoolStatus: getSubmitPoolStatus,
-    
+
     // IPFS functions
     uploadToPinata,
     handleFileSelect,
@@ -106,20 +103,18 @@ export default function ShowPoolsPage() {
     // Contract state
     userAddress: voteUserAddress,
     userPsgBalance: voteUserPsgBalance,
-    
+
     // Loading states
-    isInitializing: isVoteInitializing,
     isVoting,
     error: voteError,
     success: voteSuccess,
-    
+
     // Transaction states
     txHash: voteTxHash,
-    
+
     // Functions
-    initializeContract: initializeVoteContract,
     vote,
-    connectWallet: connectVoteWallet
+    resetSuccess
   } = useVote();
 
   const {
@@ -136,23 +131,20 @@ export default function ShowPoolsPage() {
     // Contract state
     userAddress: mintUserAddress,
     isOwner,
-    
+
     // Loading states
-    isInitializing: isMintInitializing,
     isMinting,
     error: mintError,
     success: mintSuccess,
-    
+
     // Transaction states
     txHash: mintTxHash,
     mintedTokenId,
     winnerSubmissionId,
     winnerAddress,
-    
+
     // Functions
-    initializeContract: initializeMintContract,
     mintWinner,
-    connectWallet: connectMintWallet,
     isPoolReadyForMinting,
     getPoolDetails: getMintPoolDetails
   } = useMintWinner();
@@ -228,18 +220,10 @@ export default function ShowPoolsPage() {
             <p><strong>Debug Info:</strong></p>
             <p>Mint User Address: {mintUserAddress || 'Not connected'}</p>
             <p>Is Owner: {isOwner ? 'Yes' : 'No'}</p>
-            <p>Mint Initializing: {isMintInitializing ? 'Yes' : 'No'}</p>
-            
             {/* Connect Wallet for Mint */}
             {!mintUserAddress && (
               <div className="mt-3">
-                <button
-                  onClick={connectMintWallet}
-                  disabled={isMintInitializing}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 text-sm"
-                >
-                  {isMintInitializing ? 'Connecting...' : 'Connect Wallet for Mint'}
-                </button>
+                <p className="text-sm text-gray-500">Connect wallet to mint</p>
               </div>
             )}
           </div>
@@ -344,16 +328,12 @@ export default function ShowPoolsPage() {
                         {isOwner ? (
                           <button 
                             onClick={async () => {
-                              if (!mintUserAddress) {
-                                await connectMintWallet();
-                              } else {
-                                await mintWinner(pool.id);
-                              }
+                              await mintWinner(pool.id);
                             }}
-                            disabled={isMinting || isMintInitializing}
+                            disabled={isMinting || !mintUserAddress}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 text-sm"
                           >
-                            {isMinting ? 'Minting Winner...' : isMintInitializing ? 'Connecting...' : 'End Event & Mint Winner'}
+                            {isMinting ? 'Minting Winner...' : 'End Event & Mint Winner'}
                           </button>
                         ) : (
                           <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-xs text-center">
@@ -491,13 +471,7 @@ export default function ShowPoolsPage() {
                         {/* Vote Button */}
                         <div className="mt-3">
                           {!voteUserAddress ? (
-                            <button
-                              onClick={connectVoteWallet}
-                              disabled={isVoteInitializing}
-                              className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 disabled:bg-gray-300"
-                            >
-                              {isVoteInitializing ? 'Connecting...' : 'Connect to Vote'}
-                            </button>
+                            <p className="text-xs text-gray-500">Connect wallet to vote</p>
                           ) : (
                             <button
                               onClick={() => {
@@ -589,13 +563,7 @@ export default function ShowPoolsPage() {
             {/* Wallet Connection */}
             {!userAddress ? (
               <div className="text-center py-8">
-                <button
-                  onClick={connectWallet}
-                  disabled={isInitializing}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
-                >
-                  {isInitializing ? 'Connecting...' : 'Connect Wallet to Submit'}
-                </button>
+                <p className="text-gray-500">Connect your wallet to submit</p>
               </div>
             ) : (
               <div className="space-y-6">

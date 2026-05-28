@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePsgBalance } from '@/hooks/contracts/usePsgBalance';
+import { usePsgBalance } from '@/hooks/usePsgBalance';
 
 interface PsgBalanceDisplayProps {
   showConnectButton?: boolean;

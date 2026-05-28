@@ -13,8 +13,6 @@ interface TShirtViewerProps {
 }
 
 function TShirtModel({
-  frontTexture,
-  backTexture,
   activeView,
 }: {
   frontTexture?: string;
@@ -22,36 +20,24 @@ function TShirtModel({
   activeView: "front" | "back";
 }) {
   const meshRef = useRef<THREE.Group>(null);
+  const { scene } = useGLTF("/tshirt/source/Tshirt.glb");
 
-  try {
-    const { scene } = useGLTF("/tshirt/source/Tshirt.glb");
+  useFrame(() => {
+    if (meshRef.current) {
+      const targetRotation = activeView === "front" ? 0 : Math.PI;
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(
+        meshRef.current.rotation.y,
+        targetRotation,
+        0.1
+      );
+    }
+  });
 
-    // Rotate the model based on active view
-    useFrame(() => {
-      if (meshRef.current) {
-        const targetRotation = activeView === "front" ? 0 : Math.PI;
-        meshRef.current.rotation.y = THREE.MathUtils.lerp(
-          meshRef.current.rotation.y,
-          targetRotation,
-          0.1
-        );
-      }
-    });
-
-    return (
-      <group ref={meshRef} scale={[1.5, 1.5, 1.5]} position={[0, 0, 0]}>
-        <primitive object={scene.clone()} />
-      </group>
-    );
-  } catch (error) {
-    // Fallback to a simple box if model fails to load
-    return (
-      <mesh>
-        <boxGeometry args={[2, 3, 0.1]} />
-        <meshStandardMaterial color="#4F46E5" />
-      </mesh>
-    );
-  }
+  return (
+    <group ref={meshRef} scale={[1.5, 1.5, 1.5]} position={[0, 0, 0]}>
+      <primitive object={scene.clone()} />
+    </group>
+  );
 }
 
 export default function TShirtViewer({
