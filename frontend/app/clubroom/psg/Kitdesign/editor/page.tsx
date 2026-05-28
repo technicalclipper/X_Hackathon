@@ -1442,7 +1442,7 @@ function TShirtEditor3D() {
 
       console.log("Successfully uploaded to IPFS:", {
         cid,
-        gateway: `https://tan-adjacent-mammal-701.mypinata.cloud/ipfs/${cid}`,
+        gateway: `https://gateway.pinata.cloud/ipfs/${cid}`,
       });
 
       // Step 3: Submit to pool

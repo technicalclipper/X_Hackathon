@@ -174,7 +174,7 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
   const getGatewayUrl = (ipfsUrl: string) => {
     if (!ipfsUrl) return "";
     if (ipfsUrl.startsWith("http")) return ipfsUrl;
-    return `https://tan-adjacent-mammal-701.mypinata.cloud/ipfs/${ipfsUrl.replace(
+    return `https://gateway.pinata.cloud/ipfs/${ipfsUrl.replace(
       "ipfs://",
       ""
     )}`;

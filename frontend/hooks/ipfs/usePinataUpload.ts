@@ -103,7 +103,7 @@ export const usePinataUpload = () => {
 
   // Get IPFS gateway URL
   const getGatewayUrl = (cid: string) => {
-    return `https://tan-adjacent-mammal-701.mypinata.cloud/ipfs/${cid}`;
+    return `https://gateway.pinata.cloud/ipfs/${cid}`;
   };
 
   return {
