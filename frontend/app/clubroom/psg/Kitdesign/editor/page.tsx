@@ -1979,26 +1979,28 @@ function TShirtEditor3D() {
                     <directionalLight position={[10, 10, 5]} intensity={0.7} />
                     <spotLight position={[-10, -10, -5]} intensity={0.5} />
 
-                    <TShirtModel
-                      activeView={activeView}
-                      activeTool={activeTool}
-                      brushColor={brushColor}
-                      brushSize={brushSize}
-                      onModelClick={handleModelClick}
-                      onMoveElement={moveSelectedElement}
-                      designElements={designElements}
-                      selectedElement={selectedElement}
-                      onElementSelect={setSelectedElement}
-                      frontTexture={frontTexture}
-                      backTexture={backTexture}
-                      isDrawing={isDrawing}
-                      onDrawingChange={setIsDrawing}
-                      isRotationLocked={isRotationLocked}
-                      isRecordingGif={isRecordingGif}
-                      recordingProgress={recordingProgress}
-                      gifRotationRef={gifRotationRef}
-                      isRecordingForSubmission={isRecordingForSubmission}
-                    />
+                    <Suspense fallback={null}>
+                      <TShirtModel
+                        activeView={activeView}
+                        activeTool={activeTool}
+                        brushColor={brushColor}
+                        brushSize={brushSize}
+                        onModelClick={handleModelClick}
+                        onMoveElement={moveSelectedElement}
+                        designElements={designElements}
+                        selectedElement={selectedElement}
+                        onElementSelect={setSelectedElement}
+                        frontTexture={frontTexture}
+                        backTexture={backTexture}
+                        isDrawing={isDrawing}
+                        onDrawingChange={setIsDrawing}
+                        isRotationLocked={isRotationLocked}
+                        isRecordingGif={isRecordingGif}
+                        recordingProgress={recordingProgress}
+                        gifRotationRef={gifRotationRef}
+                        isRecordingForSubmission={isRecordingForSubmission}
+                      />
+                    </Suspense>
 
                     <OrbitControls
                       enablePan={false}
