@@ -91,6 +91,7 @@ function PSGClubRoom() {
   const team = ((searchParams.get("team") || "ARG").toUpperCase()) as "ARG" | "BRA" | "FRA";
   const teamLabel = ({ ARG: "ARGENTINA", BRA: "BRAZIL", FRA: "FRANCE" } as const)[team] || "ARGENTINA";
   const teamFlag = ({ ARG: "🇦🇷", BRA: "🇧🇷", FRA: "🇫🇷" } as const)[team] || "🇦🇷";
+  const teamLogo = ({ ARG: "/logos/arg.jpg", BRA: "/logos/bra.png", FRA: "/logos/fra.webp" } as const)[team];
   const [activeSection, setActiveSection] = useState("overview");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
@@ -362,7 +363,7 @@ function PSGClubRoom() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-white border-2 border-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2 flex items-center justify-center">
                         <Image
-                          src={`/logos/${team.toLowerCase()}.png`}
+                          src={teamLogo}
                           alt={`${teamLabel} Logo`}
                           width={48}
                           height={48}

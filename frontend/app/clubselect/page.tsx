@@ -51,7 +51,7 @@ export default function ClubSelect() {
       isAvailable: argBalance >= 1,
       memberCount: 41000,
       description: "Reigning World Cup champions",
-      logoPath: "/logos/arg.png",
+      logoPath: "/logos/arg.jpg",
     },
     {
       id: "BRA",
@@ -73,7 +73,7 @@ export default function ClubSelect() {
       isAvailable: fraBalance >= 1,
       memberCount: 38000,
       description: "Les Bleus on the world stage",
-      logoPath: "/logos/fra.png",
+      logoPath: "/logos/fra.webp",
     },
   ];
 
