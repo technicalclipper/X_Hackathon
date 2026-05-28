@@ -155,7 +155,8 @@ export const useSubmitToPool = () => {
           creator_address: submissionData.creatorAddress,
           content_url: submissionData.contentUrl,
           vote_count: 0,
-          contract_submission_id: submissionData.submissionId // Store contract ID separately
+          contract_submission_id: submissionData.submissionId, // Store contract ID separately
+          chain_id: 1952
         })
         .select()
         .single();

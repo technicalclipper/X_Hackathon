@@ -156,7 +156,8 @@ export const useCreatePool = () => {
           match_id: poolData.matchId,
           submission_deadline: poolData.submissionDeadline,
           voting_deadline: poolData.votingDeadline,
-          active: true
+          active: true,
+          chain_id: 1952
         })
         .select()
         .single();
