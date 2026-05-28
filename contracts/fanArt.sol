@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -9,7 +9,8 @@ interface IERC20 {
 }
 
 contract FanEngagementPool is ERC721URIStorage, Ownable {
-    IERC20 public psgToken = IERC20(0xC1771089870D3dDF8174775ed12D09Ff8DeCc550);
+    address[] public fanTokens;
+    mapping(address => bool) public isApprovedToken;
     uint256 public poolCount;
     uint256 public nftCounter;
 
@@ -56,12 +57,32 @@ contract FanEngagementPool is ERC721URIStorage, Ownable {
     event AuctionCreated(uint256 tokenId, address seller, uint256 minBid, uint256 requiredPsgTokens);
     event BidPlaced(uint256 tokenId, address bidder, uint256 amount);
     event AuctionEnded(uint256 tokenId, address winner, uint256 amount);
+    event FanTokenAdded(address token);
+
+    function addFanToken(address token) external onlyOwner {
+        require(!isApprovedToken[token], "Already approved");
+        require(token != address(0), "Zero address");
+        isApprovedToken[token] = true;
+        fanTokens.push(token);
+        emit FanTokenAdded(token);
+    }
+
+    function getFanTokens() external view returns (address[] memory) {
+        return fanTokens;
+    }
+
+    function holdsAtLeast(address user, uint256 minTokens) public view returns (bool) {
+        for (uint256 i = 0; i < fanTokens.length; i++) {
+            if (IERC20(fanTokens[i]).balanceOf(user) >= minTokens) return true;
+        }
+        return false;
+    }
 
     constructor() ERC721("FanEngagementNFT", "FENFT") Ownable(msg.sender) {}
 
 
     modifier requireTokens(address user, uint256 minTokens) {
-        require(psgToken.balanceOf(user) >= minTokens, "Insufficient PSG tokens");
+        require(holdsAtLeast(user, minTokens), "Insufficient fan tokens");
         _;
     }
 
@@ -183,7 +204,7 @@ contract FanEngagementPool is ERC721URIStorage, Ownable {
     function placeBid(uint256 tokenId) external payable {
         Auction storage auction = auctions[tokenId];
         require(auction.active, "Auction is not active");
-        require(psgToken.balanceOf(msg.sender) >= auction.requiredPsgTokens, "Not enough PSG tokens to bid");
+        require(holdsAtLeast(msg.sender, auction.requiredPsgTokens), "Not enough fan tokens to bid");
         require(msg.value > auction.highestBid, "Bid must be higher");
         require(msg.value >= auction.minBid, "Bid below minimum");
 
