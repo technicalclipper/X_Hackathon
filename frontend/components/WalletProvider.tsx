@@ -10,6 +10,8 @@ interface WalletContextType {
   contract: any;
   provider: any;
   signer: any;
+  fanBalances: { ARG: string; BRA: string; FRA: string };
+  okbBalance: string;
   psgBalance: string;
   chzBalance: string;
   psgTokenAddress: string;
@@ -17,6 +19,7 @@ interface WalletContextType {
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshPsgBalance: () => Promise<void>;
+  ensureXLayerNetwork: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -43,6 +46,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     contract: psgBalanceHook.contract,
     provider: psgBalanceHook.provider,
     signer: psgBalanceHook.signer,
+    fanBalances: psgBalanceHook.fanBalances,
+    okbBalance: psgBalanceHook.okbBalance,
     psgBalance: psgBalanceHook.psgBalance,
     chzBalance: psgBalanceHook.chzBalance,
     psgTokenAddress: psgBalanceHook.psgTokenAddress,
@@ -50,6 +55,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     connectWallet: psgBalanceHook.connectWallet,
     disconnectWallet: psgBalanceHook.disconnectWallet,
     refreshPsgBalance: psgBalanceHook.refreshBalance,
+    ensureXLayerNetwork: psgBalanceHook.ensureXLayerNetwork,
   };
 
   return (
