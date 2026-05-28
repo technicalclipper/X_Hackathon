@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  Suspense,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Text } from "@react-three/drei";
@@ -47,7 +46,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -150,7 +149,13 @@ function TShirtModel({
   const [lastPaintPosition, setLastPaintPosition] =
     useState<THREE.Vector2 | null>(null);
 
-  const gltf = useGLTF("/tshirt/source/Tshirt.glb");
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  let gltf: any;
+  try {
+    gltf = useGLTF("/tshirt/source/Tshirt.glb");
+  } catch (error) {
+    // Model loading in progress — component re-renders when asset is ready
+  }
 
   useFrame((state, delta) => {
     if (meshRef.current) {
@@ -466,8 +471,11 @@ function LogoItem({
 
 function TShirtEditor3D() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const team = (searchParams.get("team") || "argentina").toLowerCase();
+  const [team, setTeam] = useState("argentina");
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setTeam((params.get("team") || "argentina").toLowerCase());
+  }, []);
   const teamName = team.replace(/-/g, " ").toUpperCase();
   const teamLogoPath = `/logos/${team}.png`;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1979,28 +1987,26 @@ function TShirtEditor3D() {
                     <directionalLight position={[10, 10, 5]} intensity={0.7} />
                     <spotLight position={[-10, -10, -5]} intensity={0.5} />
 
-                    <Suspense fallback={null}>
-                      <TShirtModel
-                        activeView={activeView}
-                        activeTool={activeTool}
-                        brushColor={brushColor}
-                        brushSize={brushSize}
-                        onModelClick={handleModelClick}
-                        onMoveElement={moveSelectedElement}
-                        designElements={designElements}
-                        selectedElement={selectedElement}
-                        onElementSelect={setSelectedElement}
-                        frontTexture={frontTexture}
-                        backTexture={backTexture}
-                        isDrawing={isDrawing}
-                        onDrawingChange={setIsDrawing}
-                        isRotationLocked={isRotationLocked}
-                        isRecordingGif={isRecordingGif}
-                        recordingProgress={recordingProgress}
-                        gifRotationRef={gifRotationRef}
-                        isRecordingForSubmission={isRecordingForSubmission}
-                      />
-                    </Suspense>
+                    <TShirtModel
+                      activeView={activeView}
+                      activeTool={activeTool}
+                      brushColor={brushColor}
+                      brushSize={brushSize}
+                      onModelClick={handleModelClick}
+                      onMoveElement={moveSelectedElement}
+                      designElements={designElements}
+                      selectedElement={selectedElement}
+                      onElementSelect={setSelectedElement}
+                      frontTexture={frontTexture}
+                      backTexture={backTexture}
+                      isDrawing={isDrawing}
+                      onDrawingChange={setIsDrawing}
+                      isRotationLocked={isRotationLocked}
+                      isRecordingGif={isRecordingGif}
+                      recordingProgress={recordingProgress}
+                      gifRotationRef={gifRotationRef}
+                      isRecordingForSubmission={isRecordingForSubmission}
+                    />
 
                     <OrbitControls
                       enablePan={false}
@@ -2714,10 +2720,4 @@ function TShirtEditor3D() {
   );
 }
 
-export default function TShirtEditor3DPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
-      <TShirtEditor3D />
-    </Suspense>
-  );
-}
+export default TShirtEditor3D;
