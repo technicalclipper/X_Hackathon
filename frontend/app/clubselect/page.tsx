@@ -35,95 +35,52 @@ interface Club {
 
 export default function ClubSelect() {
   const router = useRouter();
-  const { psgBalance, isConnected, isConnecting } = useWallet();
+  const { fanBalances, isConnected, isConnecting } = useWallet();
 
-  // Parse PSG balance to a number, default to 0 if not connected or invalid
-  const psgTokens = isConnected ? parseFloat(psgBalance) || 0 : 0;
-
-  // For other clubs, we'll keep them at 0 for now since we only have PSG integration
-  const userTokens = {
-    psg: psgTokens,
-    fcb: 0,
-    juve: 0,
-    acm: 0,
-    atm: 0,
-    ars: 0,
-  };
+  const argBalance = isConnected ? parseFloat(fanBalances.ARG) || 0 : 0;
+  const braBalance = isConnected ? parseFloat(fanBalances.BRA) || 0 : 0;
+  const fraBalance = isConnected ? parseFloat(fanBalances.FRA) || 0 : 0;
 
   const clubs: Club[] = [
     {
-      id: "psg",
-      name: "PARIS SAINT-GERMAIN",
-      shortName: "PSG",
-      color: "bg-blue-800",
+      id: "ARG",
+      name: "ARGENTINA",
+      shortName: "ARG",
+      color: "bg-sky-500",
       tokensRequired: 1,
-      isAvailable: psgTokens >= 1,
-      memberCount: 15420,
-      description: "The Parisian powerhouse with global superstars",
-      logoPath: "/logos/psg.png",
+      isAvailable: argBalance >= 1,
+      memberCount: 41000,
+      description: "Reigning World Cup champions",
+      logoPath: "/logos/arg.png",
     },
     {
-      id: "barcelona",
-      name: "FC BARCELONA",
-      shortName: "FCB",
-      color: "bg-blue-600",
+      id: "BRA",
+      name: "BRAZIL",
+      shortName: "BRA",
+      color: "bg-yellow-400",
       tokensRequired: 1,
-      isAvailable: userTokens.fcb >= 1,
-      memberCount: 28350,
-      description: "More than a club - Mes que un club",
-      logoPath: "/logos/fcb.png",
+      isAvailable: braBalance >= 1,
+      memberCount: 52000,
+      description: "Five-time World Cup winners",
+      logoPath: "/logos/bra.png",
     },
     {
-      id: "juventus",
-      name: "JUVENTUS FC",
-      shortName: "JUVE",
-      color: "bg-gray-800",
+      id: "FRA",
+      name: "FRANCE",
+      shortName: "FRA",
+      color: "bg-blue-700",
       tokensRequired: 1,
-      isAvailable: userTokens.juve >= 1,
-      memberCount: 19875,
-      description: "The Old Lady of Italian football",
-      logoPath: "/logos/jfc.png",
-    },
-    {
-      id: "milan",
-      name: "AC MILAN",
-      shortName: "ACM",
-      color: "bg-red-600",
-      tokensRequired: 1,
-      isAvailable: userTokens.acm >= 1,
-      memberCount: 22100,
-      description: "Rossoneri - 7-time Champions League winners",
-      logoPath: "/logos/acm.png",
-    },
-    {
-      id: "atletico",
-      name: "ATLETICO MADRID",
-      shortName: "ATM",
-      color: "bg-red-700",
-      tokensRequired: 1,
-      isAvailable: userTokens.atm >= 1,
-      memberCount: 18650,
-      description: "Aupa Atleti - The heart of Madrid",
-      logoPath: "/logos/atm.png",
-    },
-    {
-      id: "arsenal",
-      name: "ARSENAL FC",
-      shortName: "ARS",
-      color: "bg-red-500",
-      tokensRequired: 1,
-      isAvailable: userTokens.ars >= 1,
-      memberCount: 31200,
-      description: "The Gunners - North London's finest",
-      logoPath: "/logos/ars.png",
+      isAvailable: fraBalance >= 1,
+      memberCount: 38000,
+      description: "Les Bleus on the world stage",
+      logoPath: "/logos/fra.png",
     },
   ];
 
   const handleEnterClub = (clubId: string) => {
     const club = clubs.find((c) => c.id === clubId);
     if (club?.isAvailable) {
-      // Navigate to PSG club room directly
-      router.push(`/clubroom/psg`);
+      router.push(`/clubroom/psg?team=${clubId}`);
     }
   };
 
@@ -160,7 +117,7 @@ export default function ClubSelect() {
                       </span>
                     </div>
                     <span className="text-gray-400 font-mono text-sm">
-                      / CLUB ROOMS
+                      / WORLD CUP TEAMS
                     </span>
                   </div>
 
@@ -186,42 +143,28 @@ export default function ClubSelect() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-3xl font-black tracking-wider mb-2">
-                      GO TO CLUB ROOM
+                      PICK YOUR WORLD CUP TEAM
                     </CardTitle>
                     <p className="text-sm font-mono opacity-80">
-                      ENTER YOUR FOOTBALL SANCTUARY
+                      ENTER YOUR WORLD CUP HQ
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {clubs.slice(0, 4).map((club) => (
-                      <motion.div
-                        key={club.id}
-                        className="relative group"
-                        whileHover={{ scale: 1.1 }}
-                      >
+                    {clubs.map((club) => (
+                      <motion.div key={club.id} className="relative group" whileHover={{ scale: 1.1 }}>
                         <div className="flex items-center gap-2 bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] px-3 py-2">
                           <div className="w-5 h-5 flex items-center justify-center bg-gray-50 border border-black p-0.5">
-                            <Image
-                              src={club.logoPath}
-                              alt={club.shortName}
-                              width={16}
-                              height={16}
-                              className="object-contain max-w-full max-h-full"
-                            />
+                            <Image src={club.logoPath} alt={club.shortName} width={16} height={16} className="object-contain max-w-full max-h-full" />
                           </div>
                           <span className="text-sm font-black text-black min-w-[16px] text-center">
-                            {club.id === "psg" && isConnecting
-                              ? "..."
-                              : club.id === "psg"
-                              ? parseFloat(psgBalance || "0").toFixed(1)
-                              : userTokens[
-                                  club.id as keyof typeof userTokens
-                                ] || 0}
+                            {isConnecting
+                              ? "…"
+                              : isConnected
+                              ? parseFloat(fanBalances[club.id as 'ARG' | 'BRA' | 'FRA'] || "0").toFixed(1)
+                              : "0"}
                           </span>
                         </div>
-
-                        {/* Hover Tooltip */}
                         <motion.div
                           className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-black text-white px-3 py-2 border-2 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] text-sm font-bold whitespace-nowrap z-50"
                           initial={{ opacity: 0, y: -10 }}
@@ -229,69 +172,13 @@ export default function ClubSelect() {
                           transition={{ duration: 0.2 }}
                         >
                           {club.shortName} TOKENS:{" "}
-                          {club.id === "psg" && isConnecting
-                            ? "Connecting..."
-                            : club.id === "psg" && !isConnected
-                            ? "Not Connected"
-                            : club.id === "psg"
-                            ? parseFloat(psgBalance || "0").toFixed(2)
-                            : userTokens[club.id as keyof typeof userTokens] ||
-                              0}
+                          {isConnecting ? "Connecting…" : isConnected
+                            ? parseFloat(fanBalances[club.id as 'ARG' | 'BRA' | 'FRA'] || "0").toFixed(2)
+                            : "Not Connected"}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black border-l border-t border-white rotate-45 translate-y-1"></div>
                         </motion.div>
                       </motion.div>
                     ))}
-
-                    {clubs.length > 4 && (
-                      <motion.div
-                        className="relative group"
-                        whileHover={{ scale: 1.1 }}
-                      >
-                        <div className="flex items-center gap-2 bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] px-3 py-2">
-                          <span className="text-sm font-black text-black">
-                            +{clubs.length - 4}
-                          </span>
-                        </div>
-
-                        {/* Extended Tooltip */}
-                        <motion.div
-                          className="absolute top-full mt-2 right-0 bg-black text-white px-4 py-3 border-2 border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] text-sm font-bold z-50 min-w-max"
-                          initial={{ opacity: 0, y: -10 }}
-                          whileHover={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {clubs.slice(4).map((club) => (
-                            <div
-                              key={club.id}
-                              className="flex items-center gap-3 mb-2 last:mb-0"
-                            >
-                              <div className="w-4 h-4 flex items-center justify-center bg-gray-50 border border-white p-0.5">
-                                <Image
-                                  src={club.logoPath}
-                                  alt={club.shortName}
-                                  width={12}
-                                  height={12}
-                                  className="object-contain max-w-full max-h-full"
-                                />
-                              </div>
-                              <span className="min-w-[60px]">
-                                {club.shortName}:{" "}
-                                <span className="font-black text-main">
-                                  {club.id === "psg" && isConnecting
-                                    ? "..."
-                                    : club.id === "psg"
-                                    ? parseFloat(psgBalance || "0").toFixed(1)
-                                    : userTokens[
-                                        club.id as keyof typeof userTokens
-                                      ] || 0}
-                                </span>
-                              </span>
-                            </div>
-                          ))}
-                          <div className="absolute bottom-full right-4 w-2 h-2 bg-black border-l border-t border-white rotate-45 translate-y-1"></div>
-                        </motion.div>
-                      </motion.div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -416,7 +303,7 @@ export default function ClubSelect() {
           className="mt-8 text-center"
         >
           <p className="text-xs font-bold text-gray-600">
-            POWERED BY FANVAS • DEMOCRATIZING FAN ART
+            POWERED BY FANVAS · ON X LAYER
           </p>
         </motion.div>
       </div>
