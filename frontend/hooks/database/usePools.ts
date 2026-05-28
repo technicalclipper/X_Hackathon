@@ -36,6 +36,7 @@ export const usePools = () => {
       const { data, error } = await supabase
         .from('pools')
         .select('*')
+        .eq('chain_id', 1952)
         .order('created_at', { ascending: false });
 
       if (error) {

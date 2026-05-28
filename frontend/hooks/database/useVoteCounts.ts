@@ -21,6 +21,7 @@ export const useVoteCounts = (poolId?: number) => {
       const { data: submissions, error: submissionsError } = await supabase
         .from('submissions')
         .select('id, contract_submission_id, vote_count')
+        .eq('chain_id', 1952)
         .eq('pool_id', poolId);
 
       if (submissionsError) {
@@ -54,6 +55,7 @@ export const useVoteCounts = (poolId?: number) => {
       const { data, error } = await supabase
         .from('votes')
         .select('id')
+        .eq('chain_id', 1952)
         .eq('submission_id', databaseSubmissionId) // This is the database submission ID
         .eq('voter_address', userAddress)
         .single();
@@ -75,6 +77,7 @@ export const useVoteCounts = (poolId?: number) => {
       const { data, error } = await supabase
         .from('votes')
         .select('id')
+        .eq('chain_id', 1952)
         .eq('pool_id', poolId)
         .eq('voter_address', userAddress)
         .single();

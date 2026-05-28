@@ -54,6 +54,7 @@ export const useAuctions = () => {
       const { data: auctionsData, error: auctionsError } = await supabase
         .from("auctions")
         .select("*")
+        .eq("chain_id", 1952)
         .eq("active", true)
         .order("created_at", { ascending: false });
 
@@ -89,7 +90,7 @@ export const useAuctions = () => {
               created_at
             )
           )
-        `);
+        `).eq("chain_id", 1952);
 
       if (nftMintsError) {
         console.error("Supabase error:", nftMintsError);
@@ -285,6 +286,7 @@ export const useEndedAuctions = () => {
       const { data, error } = await supabase
         .from("auctions")
         .select("*")
+        .eq("chain_id", 1952)
         .eq("active", false)
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);

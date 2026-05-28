@@ -73,6 +73,7 @@ export const useOwnedNFTs = (ownerAddress?: string) => {
           )
         `
         )
+        .eq("chain_id", 1952)
         .eq("current_owner_address", ownerAddress);
 
       if (error) {

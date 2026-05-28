@@ -30,6 +30,7 @@ export const useBidHistory = (tokenId?: number) => {
       const { data, error } = await supabase
         .from('bids')
         .select('*')
+        .eq('chain_id', 1952)
         .eq('token_id', tokenId)
         .order('created_at', { ascending: false });
 

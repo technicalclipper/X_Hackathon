@@ -36,6 +36,7 @@ export const useSubmissions = (poolId?: number) => {
       let query = supabase
         .from("submissions")
         .select("*")
+        .eq("chain_id", 1952)
         .order("created_at", { ascending: false });
 
       // Filter by pool ID if provided
