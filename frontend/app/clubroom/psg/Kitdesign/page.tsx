@@ -898,107 +898,94 @@ export default function KitDesignPage() {
               >
                 <Card className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6">
                   <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
+
+                    {/* Left: Create Submission */}
+                    <Button
+                      onClick={handleCreateSubmission}
+                      className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black text-lg border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 px-6 py-3"
+                    >
+                      <Plus className="w-6 h-6 mr-2" />
+                      Create Submission
+                    </Button>
+
+                    {/* Right: Sort buttons + Pool selector */}
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Button
-                        onClick={handleCreateSubmission}
-                        className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-black text-lg border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 px-6 py-3"
+                        variant="neutral"
+                        className={`border-4 border-black font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 ${
+                          sortBy === "votes"
+                            ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                        }`}
+                        onClick={() => handleSortChange("votes")}
                       >
-                        <Plus className="w-6 h-6 mr-2" />
-                        Create Submission
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Top Voted
+                      </Button>
+                      <Button
+                        variant="neutral"
+                        className={`border-4 border-black font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 ${
+                          sortBy === "recent"
+                            ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                        }`}
+                        onClick={() => handleSortChange("recent")}
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        Recent
+                      </Button>
+                      <Button
+                        variant="neutral"
+                        className={`border-4 border-black font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 ${
+                          sortBy === "views"
+                            ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-white text-black hover:bg-gray-100 active:bg-gray-200"
+                        }`}
+                        onClick={() => handleSortChange("views")}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Most Viewed
                       </Button>
 
-                      {/* Pool Selection */}
-
-                      <div className="flex justify-end items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="neutral"
-                            className={`border-4 border-black font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 ${
-                              sortBy === "votes"
-                                ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                : "bg-white text-black hover:bg-gray-100 active:bg-gray-200 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                            }`}
-                            onClick={() => handleSortChange("votes")}
-                          >
-                            <Trophy className="w-4 h-4 mr-2" />
-                            Top Voted
-                          </Button>
-                          <Button
-                            variant="neutral"
-                            className={`border-4 border-black font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 ${
-                              sortBy === "recent"
-                                ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                : "bg-white text-black hover:bg-gray-100 active:bg-gray-200 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                            }`}
-                            onClick={() => handleSortChange("recent")}
-                          >
-                            <Clock className="w-4 h-4 mr-2" />
-                            Recent
-                          </Button>
-                          <Button
-                            variant="neutral"
-                            className={`border-4 border-black font-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:scale-105 active:scale-95 ${
-                              sortBy === "views"
-                                ? "bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                : "bg-white text-black hover:bg-gray-100 active:bg-gray-200 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                            }`}
-                            onClick={() => handleSortChange("views")}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Most Viewed
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Select
-                            onValueChange={handlePoolSelect}
-                            value={selectedPool?.id.toString()}
-                          >
-                            <SelectTrigger className="w-[200px] bg-white text-black border-4 border-black font-black text-sm hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                              <SelectValue placeholder="Select Pool" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                              <SelectGroup>
-                                <SelectLabel className="font-black text-black">
-                                  World Cup Pools
-                                </SelectLabel>
-                                {isLoading ? (
-                                  <SelectItem value="loading" disabled>
-                                    Loading pools...
-                                  </SelectItem>
-                                ) : error ? (
-                                  <SelectItem value="error" disabled>
-                                    Error loading pools
-                                  </SelectItem>
-                                ) : jerseyPools.length === 0 ? (
-                                  <SelectItem value="empty" disabled>
-                                    No jersey pools available
-                                  </SelectItem>
-                                ) : (
-                                  jerseyPools.map((pool) => (
-                                    <SelectItem
-                                      key={pool.id}
-                                      value={pool.id.toString()}
-                                      className="font-bold text-black hover:bg-gray-100"
-                                    >
-                                      <div className="flex items-center justify-between w-full">
-                                        <span>{pool.match_id}</span>
-                                        <span
-                                          className={`text-xs px-2 py-1 rounded ${
-                                            getPoolPhase(pool).color
-                                          } text-black font-black ml-2`}
-                                        >
-                                          {getPoolPhase(pool).phase}
-                                        </span>
-                                      </div>
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+                      <Select
+                        onValueChange={handlePoolSelect}
+                        value={selectedPool?.id.toString()}
+                      >
+                        <SelectTrigger className="w-[260px] bg-white text-black border-4 border-black font-black text-sm hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                          <SelectValue placeholder="Select Pool" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                          <SelectGroup>
+                            <SelectLabel className="font-black text-black">
+                              World Cup Pools
+                            </SelectLabel>
+                            {isLoading ? (
+                              <SelectItem value="loading" disabled>Loading pools...</SelectItem>
+                            ) : error ? (
+                              <SelectItem value="error" disabled>Error loading pools</SelectItem>
+                            ) : jerseyPools.length === 0 ? (
+                              <SelectItem value="empty" disabled>No jersey pools available</SelectItem>
+                            ) : (
+                              jerseyPools.map((pool) => (
+                                <SelectItem
+                                  key={pool.id}
+                                  value={pool.id.toString()}
+                                  className="font-bold text-black hover:bg-gray-100"
+                                >
+                                  <div className="flex items-center justify-between w-full gap-2">
+                                    <span className="truncate">{pool.match_id}</span>
+                                    <span className={`text-xs px-2 py-0.5 shrink-0 ${getPoolPhase(pool).color} text-black font-black`}>
+                                      {getPoolPhase(pool).phase}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </div>
+
                   </div>
                 </Card>
               </motion.div>
