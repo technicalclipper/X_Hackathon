@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  Suspense,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Text } from "@react-three/drei";
@@ -46,7 +47,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -468,8 +469,12 @@ function LogoItem({
   );
 }
 
-export default function TShirtEditor3D() {
+function TShirtEditor3D() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const team = (searchParams.get("team") || "argentina").toLowerCase();
+  const teamName = team.replace(/-/g, " ").toUpperCase();
+  const teamLogoPath = `/logos/${team}.png`;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mousePosition = useMousePosition();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -592,7 +597,7 @@ export default function TShirtEditor3D() {
   ];
 
   const requiredLogos = [
-    { id: "psg-logo", name: "Fan Logo", required: true, category: "team" },
+    { id: "team-logo", name: `${teamName} LOGO`, required: true, category: "team" },
     { id: "nike-logo", name: "Nike", required: true, category: "sponsor" },
   ];
 
@@ -789,7 +794,7 @@ export default function TShirtEditor3D() {
 
       // Map logo IDs to their respective file paths
       const logoMap: { [key: string]: string } = {
-        "psg-logo": "/logos/psg2.png",
+        "team-logo": teamLogoPath,
         "nike-logo": "/logos/nike.png",
         "qatar-airways": "/logos/qatar-airways.png",
       };
@@ -1121,7 +1126,7 @@ export default function TShirtEditor3D() {
         setTimeout(() => {
           const link = document.createElement("a");
           link.href = image.dataUrl;
-          link.download = `psg-kit-${image.name}`;
+          link.download = `world-cup-kit-${image.name}`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -1256,7 +1261,7 @@ export default function TShirtEditor3D() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `psg-kit-360-${Date.now()}.gif`;
+            link.download = `world-cup-kit-360-${Date.now()}.gif`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1347,7 +1352,7 @@ export default function TShirtEditor3D() {
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = `psg-kit-design-${Date.now()}.json`;
+    link.download = `world-cup-kit-design-${Date.now()}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1395,7 +1400,7 @@ export default function TShirtEditor3D() {
       setSubmissionProgress(50);
 
       const timestamp = Date.now();
-      const file = new File([gifBlob], `psg-kit-design-${timestamp}.gif`, {
+      const file = new File([gifBlob], `world-cup-kit-design-${timestamp}.gif`, {
         type: "image/gif",
       });
 
@@ -2709,5 +2714,13 @@ export default function TShirtEditor3D() {
         }}
       />
     </div>
+  );
+}
+
+export default function TShirtEditor3DPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+      <TShirtEditor3D />
+    </Suspense>
   );
 }
