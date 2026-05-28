@@ -192,7 +192,7 @@ export default function ClubSelect() {
               </div>
 
               {/* Team grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {region.teams.map((team) => {
                   const delay = cardIndex++ * 0.03;
                   return (
@@ -213,14 +213,14 @@ export default function ClubSelect() {
                         `}
                         onClick={() => handleEnterTeam(team.id)}
                       >
-                        <CardContent className="p-3 flex flex-col items-center gap-2">
+                        <CardContent className="p-4 flex flex-col items-center gap-3">
                           {/* Logo box */}
-                          <div className="relative w-14 h-14 bg-white border-2 border-black flex items-center justify-center p-1.5 overflow-hidden group">
+                          <div className="relative w-24 h-24 bg-white border-2 border-black flex items-center justify-center p-2 overflow-hidden">
                             <Image
                               src={`/logos/${team.id}.png`}
                               alt={team.name}
-                              width={48}
-                              height={48}
+                              width={80}
+                              height={80}
                               className="object-contain w-full h-full z-10 relative"
                             />
                             <motion.div
@@ -232,22 +232,19 @@ export default function ClubSelect() {
                           </div>
 
                           {/* Country name */}
-                          <p className="text-center font-black text-foreground leading-tight"
-                            style={{ fontSize: "0.6rem" }}>
+                          <p className="text-center font-black text-foreground text-xs leading-tight">
                             {team.name}
                           </p>
 
                           {/* Status */}
                           {hasFanToken ? (
-                            <div className="w-full bg-main text-black text-center border border-border font-black py-0.5"
-                              style={{ fontSize: "0.55rem" }}>
-                              <Unlock className="w-2 h-2 inline mr-0.5" />
+                            <div className="w-full bg-main text-black text-center border-2 border-border font-black text-xs py-1">
+                              <Unlock className="w-3 h-3 inline mr-1" />
                               ENTER
                             </div>
                           ) : (
-                            <div className="w-full bg-red-500 text-white text-center border border-border font-black py-0.5"
-                              style={{ fontSize: "0.55rem" }}>
-                              <Lock className="w-2 h-2 inline mr-0.5" />
+                            <div className="w-full bg-red-500 text-white text-center border-2 border-border font-black text-xs py-1">
+                              <Lock className="w-3 h-3 inline mr-1" />
                               LOCKED
                             </div>
                           )}
