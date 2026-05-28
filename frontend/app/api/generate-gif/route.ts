@@ -1,7 +1,16 @@
 // app/api/generate-gif/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createCanvas, loadImage } from "canvas";
-import GIFEncoder from "gifencoder";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const GIFEncoder = require("gif-encoder-2") as new (width: number, height: number) => {
+  start(): void;
+  setRepeat(repeat: number): void;
+  setDelay(delay: number): void;
+  setQuality(quality: number): void;
+  addFrame(ctx: unknown): void;
+  finish(): void;
+  out: { getData(): Buffer };
+};
 
 export async function POST(request: NextRequest) {
   try {
