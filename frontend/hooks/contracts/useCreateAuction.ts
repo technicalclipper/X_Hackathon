@@ -55,7 +55,7 @@ export const useCreateAuction = () => {
     }
 
     if (isNaN(requiredPsgTokensNum) || requiredPsgTokensNum <= 0) {
-      setError("Please enter a valid PSG token amount greater than 0");
+      setError("Please enter a valid Fan token amount greater than 0");
       return;
     }
 
@@ -76,7 +76,7 @@ export const useCreateAuction = () => {
 
       console.log("Creating auction for token:", tokenIdNum);
       console.log("Min bid (ETH):", trimmedMinBid);
-      console.log("Required PSG tokens:", trimmedRequiredPsgTokens);
+      console.log("Required Fan tokens:", trimmedRequiredPsgTokens);
 
       // Verify that the user owns this NFT
       try {

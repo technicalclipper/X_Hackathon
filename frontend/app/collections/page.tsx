@@ -350,10 +350,10 @@ export default function DemoMarketPage() {
                     />
                   </div>
 
-                  {/* Required PSG Tokens */}
+                  {/* Required Fan Tokens */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Required PSG Tokens
+                      Required Fan Tokens
                     </label>
                     <input
                       type="number"

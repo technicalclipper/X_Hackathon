@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Fanvas - Democratizing Fan Art",
   description:
-    "Create, vote, and own official club visuals powered by Chiliz fan tokens",
+    "Create, vote, and own official club visuals powered by X Layer fan tokens",
 };
 
 export default function RootLayout({

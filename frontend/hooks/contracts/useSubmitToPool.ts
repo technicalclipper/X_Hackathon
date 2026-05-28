@@ -73,11 +73,11 @@ export const useSubmitToPool = () => {
       return;
     }
 
-    // Check if user has enough PSG tokens (10 tokens required)
+    // Check if user has enough Fan tokens (10 tokens required)
     const requiredTokens = 10;
     const userBalance = parseFloat(psgBalance);
     if (userBalance < requiredTokens) {
-      setError(`You need at least ${requiredTokens} PSG tokens to submit. Current balance: ${userBalance}`);
+      setError(`You need at least ${requiredTokens} Fan tokens to submit. Current balance: ${userBalance}`);
       return;
     }
 

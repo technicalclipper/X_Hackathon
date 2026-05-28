@@ -291,10 +291,10 @@ export default function KitDesignPage() {
       return;
     }
 
-    // Check if user has enough PSG tokens
+    // Check if user has enough Fan tokens
     if (parseFloat(userPsgBalance) < 10) {
       console.log(
-        `You need at least 10 PSG tokens to vote. Current balance: ${userPsgBalance}`
+        `You need at least 10 Fan tokens to vote. Current balance: ${userPsgBalance}`
       );
       return;
     }
@@ -353,7 +353,7 @@ export default function KitDesignPage() {
   });
 
   const handleBack = () => {
-    console.log("Navigating back to PSG club room");
+    console.log("Navigating back to Fan club room");
     router.push("/clubroom/psg");
   };
 
@@ -481,7 +481,7 @@ export default function KitDesignPage() {
                             </span>
                           </div>
                           <span className="text-gray-400 font-mono text-sm">
-                            / CLUB ROOMS / PSG / KIT DESIGN
+                            / CLUB ROOMS / FAN / KIT DESIGN
                           </span>
                         </div>
 
@@ -526,7 +526,7 @@ export default function KitDesignPage() {
 
                           <div className="flex items-center gap-2 bg-main text-black px-3 py-2 border-2 border-border font-black text-sm">
                             <Coins className="w-4 h-4" />
-                            <span>{userPsgBalance} PSG</span>
+                            <span>{userPsgBalance} Fan</span>
                           </div>
                           {isConnected && (
                             <div
@@ -555,7 +555,7 @@ export default function KitDesignPage() {
                             <CardTitle className="text-3xl font-black tracking-wider mb-2">
                               {selectedPool
                                 ? `${selectedPool.match_id} - JERSEY DESIGN`
-                                : "PSG JERSEY DESIGN"}
+                                : "FAN JERSEY DESIGN"}
                             </CardTitle>
                             <p className="text-sm font-mono opacity-80">
                               SUBMIT YOUR DESIGNS AND VOTE FOR THE BEST
@@ -1089,7 +1089,7 @@ export default function KitDesignPage() {
                                 {isConnected &&
                                   parseFloat(userPsgBalance) < 10 && (
                                     <div className="text-xs text-orange-500 font-bold mt-1 text-center">
-                                      Need 10 PSG
+                                      Need 10 Fan
                                     </div>
                                   )}
                                 {isConnected && userVotedInPool && (
@@ -1259,7 +1259,7 @@ export default function KitDesignPage() {
                       </h3>
                       <ul className="text-gray-700 font-bold space-y-1">
                         <li>• Design must be original</li>
-                        <li>• Include PSG colors (Blue, Red, White)</li>
+                        <li>• Include Fan team colors</li>
                         <li>• High resolution (minimum 1920x1080)</li>
                         <li>• Submit in PNG or JPG format</li>
                       </ul>

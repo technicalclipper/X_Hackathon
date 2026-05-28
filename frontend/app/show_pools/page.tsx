@@ -573,7 +573,7 @@ export default function ShowPoolsPage() {
                     <span className="font-medium">Address:</span> {userAddress}
                   </p>
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">PSG Balance:</span> {userPsgBalance} PSG
+                    <span className="font-medium">Fan Balance:</span> {userPsgBalance} Fan
                   </p>
                 </div>
 

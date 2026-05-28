@@ -592,7 +592,7 @@ export default function TShirtEditor3D() {
   ];
 
   const requiredLogos = [
-    { id: "psg-logo", name: "PSG Logo", required: true, category: "team" },
+    { id: "psg-logo", name: "Fan Logo", required: true, category: "team" },
     { id: "nike-logo", name: "Nike", required: true, category: "sponsor" },
   ];
 
@@ -1411,7 +1411,7 @@ export default function TShirtEditor3D() {
 
       const metadata = {
         name: file.name,
-        description: `PSG Kit Design submission - ${new Date().toISOString()}`,
+        description: `Fan Kit Design submission - ${new Date().toISOString()}`,
         attributes: {
           type: "kit-design-gif",
           uploadedAt: new Date().toISOString(),
@@ -1672,7 +1672,7 @@ export default function TShirtEditor3D() {
                         </span>
                       </div>
                       <span className="text-gray-400 font-mono text-sm">
-                        / CLUB ROOMS / PSG / KIT DESIGN / EDITOR
+                        / CLUB ROOMS / FAN / KIT DESIGN / EDITOR
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1739,7 +1739,7 @@ export default function TShirtEditor3D() {
                           3D KIT EDITOR
                         </CardTitle>
                         <p className="text-sm font-mono opacity-80">
-                          DESIGN YOUR PSG JERSEY IN 3D
+                          DESIGN YOUR FAN JERSEY IN 3D
                         </p>
                       </div>
                     </div>
@@ -2463,7 +2463,7 @@ export default function TShirtEditor3D() {
               Save Your Design
             </DialogTitle>
             <DialogDescription className="text-sm font-mono">
-              Choose where you'd like to save your PSG kit design
+              Choose where you'd like to save your Fan kit design
             </DialogDescription>
           </DialogHeader>
 
@@ -2647,7 +2647,7 @@ export default function TShirtEditor3D() {
               Choose Export Type
             </DialogTitle>
             <DialogDescription className="text-sm font-mono">
-              Select how you'd like to export your PSG kit design
+              Select how you'd like to export your Fan kit design
             </DialogDescription>
           </DialogHeader>
 

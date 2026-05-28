@@ -243,8 +243,8 @@ export default function NFTMarketplace() {
   const myNFTs: UserNFT[] = [
     {
       id: "user1",
-      title: "My PSG Kit Design",
-      price: "1.2 CHZ",
+      title: "My Fan Kit Design",
+      price: "1.2 OKB",
       imageUrl: "/nft-placeholder.jpg",
       status: "listed",
       club: "psg",
@@ -262,7 +262,7 @@ export default function NFTMarketplace() {
     {
       id: "user3",
       title: "Fan Art Masterpiece",
-      price: "2.0 CHZ",
+      price: "2.0 OKB",
       imageUrl: "/nft-placeholder.jpg",
       status: "listed",
       club: "psg",
@@ -274,7 +274,7 @@ export default function NFTMarketplace() {
     {
       id: "bid1",
       nftTitle: "Neymar's Golden Moment",
-      bidAmount: "2.5 CHZ",
+      bidAmount: "2.5 OKB",
       status: "leading",
       timeLeft: "2h 34m",
       imageUrl: "/nft-placeholder.jpg",
@@ -282,7 +282,7 @@ export default function NFTMarketplace() {
     {
       id: "bid2",
       nftTitle: "Champion's Trophy",
-      bidAmount: "1.8 CHZ",
+      bidAmount: "1.8 OKB",
       status: "outbid",
       timeLeft: "4h 12m",
       imageUrl: "/nft-placeholder.jpg",
@@ -290,7 +290,7 @@ export default function NFTMarketplace() {
     {
       id: "bid3",
       nftTitle: "Victory Celebration",
-      bidAmount: "3.2 CHZ",
+      bidAmount: "3.2 OKB",
       status: "won",
       timeLeft: "Ended",
       imageUrl: "/nft-placeholder.jpg",
@@ -348,7 +348,7 @@ export default function NFTMarketplace() {
       const newBidValue = parseFloat(tempBidAmount);
 
       if (newBidValue < minBidValue) {
-        alert(`Your bid must be at least ${minBidValue.toFixed(3)} CHZ!`);
+        alert(`Your bid must be at least ${minBidValue.toFixed(3)} OKB!`);
         return;
       }
     }
@@ -452,7 +452,7 @@ export default function NFTMarketplace() {
     const matchesCategory =
       selectedCategory === "all" ||
       auction.pool_type.toLowerCase() === selectedCategory;
-    const matchesClub = selectedClub === "all"; // All auctions are PSG for now
+    const matchesClub = selectedClub === "all"; // All auctions are Fan for now
     const matchesType = selectedType === "all" || selectedType === "auction";
     return matchesCategory && matchesClub && matchesType;
   });
@@ -493,7 +493,7 @@ export default function NFTMarketplace() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 bg-main text-black px-3 py-2 border-2 border-border font-black text-sm">
                       <Coins className="w-4 h-4" />
-                      <span>125.5 CHZ</span>
+                      <span>125.5 OKB</span>
                     </div>
                     <div className="flex items-center gap-2 bg-white text-black px-3 py-2 border-2 border-border font-black text-sm">
                       <Trophy className="w-4 h-4" />
@@ -511,13 +511,13 @@ export default function NFTMarketplace() {
                       NFT MARKETPLACE
                     </CardTitle>
                     <p className="text-sm font-mono opacity-80">
-                      BUY, SELL & AUCTION YOUR PSG COLLECTIBLES
+                      BUY, SELL & AUCTION YOUR FAN COLLECTIBLES
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <div className="bg-white text-black px-3 py-2 border-2 border-border font-black text-sm">
-                      <span>VOLUME: 1,234 CHZ</span>
+                      <span>VOLUME: 1,234 OKB</span>
                     </div>
                     <div className="bg-white text-black px-3 py-2 border-2 border-border font-black text-sm">
                       <span>ACTIVE: 47 AUCTIONS</span>
@@ -813,10 +813,10 @@ export default function NFTMarketplace() {
                                           currentBid: auction.highest_bid
                                             ? `${formatEther(
                                                 auction.highest_bid
-                                              ).toFixed(3)} CHZ`
+                                              ).toFixed(3)} OKB`
                                             : `${formatEther(
                                                 auction.min_bid
-                                              ).toFixed(3)} CHZ`,
+                                              ).toFixed(3)} OKB`,
                                         } as NFTItem)
                                       }
                                       className="bg-main text-white border-2 border-black font-black py-1 px-3 text-sm hover:bg-gray-800 transition-colors rounded-none"
@@ -867,10 +867,10 @@ export default function NFTMarketplace() {
                                     {auction.highest_bid
                                       ? `${formatEther(
                                           auction.highest_bid
-                                        ).toFixed(3)} CHZ`
+                                        ).toFixed(3)} OKB`
                                       : `${formatEther(auction.min_bid).toFixed(
                                           3
-                                        )} CHZ`}
+                                        )} OKB`}
                                   </span>
                                 </div>
 
@@ -880,7 +880,7 @@ export default function NFTMarketplace() {
                                   </span>
                                   <span className="text-sm font-black">
                                     {formatEther(auction.min_bid).toFixed(3)}{" "}
-                                    CHZ
+                                    OKB
                                   </span>
                                 </div>
 
@@ -1136,7 +1136,7 @@ export default function NFTMarketplace() {
                                             htmlFor="min-bid"
                                             className="font-black"
                                           >
-                                            Min Bid (CHZ)
+                                            Min Bid (OKB)
                                           </Label>
                                           <Input
                                             id="min-bid"
@@ -1156,7 +1156,7 @@ export default function NFTMarketplace() {
                                             htmlFor="psg-tokens"
                                             className="font-black"
                                           >
-                                            PSG Tokens
+                                            Fan Tokens
                                           </Label>
                                           <Input
                                             id="psg-tokens"
@@ -1487,10 +1487,10 @@ export default function NFTMarketplace() {
                                           {auction.highest_bid
                                             ? `${formatEther(
                                                 auction.highest_bid
-                                              ).toFixed(3)} CHZ`
+                                              ).toFixed(3)} OKB`
                                             : `${formatEther(
                                                 auction.min_bid
-                                              ).toFixed(3)} CHZ`}
+                                              ).toFixed(3)} OKB`}
                                         </span>
                                       </div>
                                       <div className="flex justify-between items-center">
@@ -1501,7 +1501,7 @@ export default function NFTMarketplace() {
                                           {formatEther(auction.min_bid).toFixed(
                                             3
                                           )}{" "}
-                                          CHZ
+                                          OKB
                                         </span>
                                       </div>
                                       <div className="flex justify-between items-center">
@@ -1719,7 +1719,7 @@ export default function NFTMarketplace() {
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-black text-black">
-                            {formatEtherBid(bid.amount).toFixed(3)} CHZ
+                            {formatEtherBid(bid.amount).toFixed(3)} OKB
                           </p>
                           {index === 0 && (
                             <Badge className="bg-green-500 text-white border-2 border-black font-black text-xs">

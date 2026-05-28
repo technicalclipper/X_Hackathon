@@ -31,14 +31,14 @@ export default function Home() {
     { icon: Palette, text: "DESIGN FAN ART" },
     { icon: Trophy, text: "CLUB ARTIFACTS" },
     { icon: Users, text: "FAN COMMUNITY" },
-    { icon: Coins, text: "EARN CHZ TOKENS" },
+    { icon: Coins, text: "EARN OKB TOKENS" },
   ];
 
   const clubs = [
     "FC BARCELONA",
     "JUVENTUS FC",
     "AC MILAN",
-    "PARIS SAINT-GERMAIN",
+    "WORLD CUP TEAM",
     "MANCHESTER CITY",
     "ARSENAL FC",
   ];
@@ -46,7 +46,7 @@ export default function Home() {
   // Terminal typing effect
   useEffect(() => {
     const messages = [
-      "CONNECTING TO CHILLIZ NETWORK...",
+      "CONNECTING TO X LAYER NETWORK...",
       "LOADING FAN ART STUDIO...",
       "SYNCING WITH CLUB DATABASES...",
       "READY FOR FAN CREATION >",
@@ -244,7 +244,7 @@ export default function Home() {
             <Marquee items={clubs} />
           </div>
         </motion.div>
-        {/* Chilliz Branding */}
+        {/* X Layer Branding */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -254,7 +254,7 @@ export default function Home() {
           <div className="bg-red-500 text-white font-black px-6 py-3 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] inline-block">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
-              <span>POWERED BY CHILLIZ</span>
+              <span>POWERED BY X LAYER</span>
               <Zap className="w-4 h-4" />
             </div>
           </div>

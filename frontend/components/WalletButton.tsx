@@ -63,13 +63,13 @@ export const WalletButton: React.FC = () => {
             <span className="text-sm font-black">
               {parseFloat(psgBalance).toFixed(1)}
             </span>
-            <span className="text-xs font-black opacity-70">PSG</span>
+            <span className="text-xs font-black opacity-70">Fan</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-sm font-black">
               {parseFloat(chzBalance).toFixed(1)}
             </span>
-            <span className="text-xs font-black opacity-70">CHZ</span>
+            <span className="text-xs font-black opacity-70">OKB</span>
           </div>
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -89,7 +89,7 @@ export const WalletButton: React.FC = () => {
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
             >
-              {/* PSG Balance (Full) */}
+              {/* Fan Balance (Full) */}
               <motion.div
                 className="bg-main text-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-3 py-2"
                 initial={{ x: 20, opacity: 0 }}
@@ -99,7 +99,7 @@ export const WalletButton: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   <span className="text-sm font-black">
-                    {parseFloat(psgBalance).toFixed(2)} PSG
+                    {parseFloat(psgBalance).toFixed(2)} Fan
                   </span>
                   <button
                     onClick={(e) => {
@@ -113,7 +113,7 @@ export const WalletButton: React.FC = () => {
                 </div>
               </motion.div>
 
-              {/* CHZ Balance (Full) */}
+              {/* OKB Balance (Full) */}
               <motion.div
                 className="bg-blue-500 text-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-3 py-2"
                 initial={{ x: 20, opacity: 0 }}
@@ -123,7 +123,7 @@ export const WalletButton: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   <span className="text-sm font-black">
-                    {parseFloat(chzBalance).toFixed(2)} CHZ
+                    {parseFloat(chzBalance).toFixed(2)} OKB
                   </span>
                   <button
                     onClick={(e) => {

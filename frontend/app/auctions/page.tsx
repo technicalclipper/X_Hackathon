@@ -271,7 +271,7 @@ export default function AuctionsPage() {
                           <span className="font-medium">Min Bid:</span> {formatEther(auction.min_bid)} ETH
                         </p>
                         <p>
-                          <span className="font-medium">Required PSG:</span> {formatEther(auction.required_psg_tokens)} PSG
+                          <span className="font-medium">Required Fan:</span> {formatEther(auction.required_psg_tokens)} Fan
                         </p>
                         {auction.highest_bid && (
                           <p>
@@ -344,7 +344,7 @@ export default function AuctionsPage() {
           <h3 className="font-semibold text-orange-800 mb-2">How Auctions Work:</h3>
           <ol className="text-sm text-orange-700 space-y-1 list-decimal list-inside">
             <li>NFT owners can put their NFTs up for auction</li>
-            <li>Bidders need to have the required PSG tokens to participate</li>
+            <li>Bidders need to have the required Fan tokens to participate</li>
             <li>Bids are made in ETH (native currency)</li>
             <li>Highest bidder wins when auction ends</li>
             <li>NFT is transferred to winner, ETH goes to seller</li>
@@ -386,7 +386,7 @@ export default function AuctionsPage() {
                   <span className="font-medium">Min Bid:</span> {formatEther(selectedAuction.min_bid)} ETH
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Required PSG:</span> {formatEther(selectedAuction.required_psg_tokens)} PSG
+                  <span className="font-medium">Required Fan:</span> {formatEther(selectedAuction.required_psg_tokens)} Fan
                 </p>
                 {selectedAuction.highest_bid && (
                   <p className="text-sm text-gray-600">
@@ -499,7 +499,7 @@ export default function AuctionsPage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">Required PSG:</span> {formatEther(selectedAuction.required_psg_tokens)} PSG
+                      <span className="font-medium">Required Fan:</span> {formatEther(selectedAuction.required_psg_tokens)} Fan
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">Status:</span> 
