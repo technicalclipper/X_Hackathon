@@ -1,61 +1,46 @@
-# 🎨 Fanvas – Democratizing Fan Art, On-Chain
+# 🌍 Fanvas X Cup — Democratizing World Cup Fan Art, On-Chain
 
 <div align="center">
 
-![Fanvas Logo](https://img.shields.io/badge/Fanvas-Democratizing%20Fan%20Art-blue?style=for-the-badge&logo=ethereum)
-![Chiliz Integration](https://img.shields.io/badge/Chiliz-Powered%20by%20Fan%20Tokens-green?style=for-the-badge&logo=chiliz)
-![Blockchain](https://img.shields.io/badge/Blockchain-Chiliz%20Spicy%20Testnet-orange?style=for-the-badge&logo=chiliz)
+![Fanvas Logo](https://img.shields.io/badge/Fanvas-X%20Cup%20Edition-blue?style=for-the-badge)
+![X Layer](https://img.shields.io/badge/X%20Layer-Testnet-orange?style=for-the-badge)
+![World Cup](https://img.shields.io/badge/Theme-FIFA%20World%20Cup-green?style=for-the-badge)
 
-**Where fandom meets blockchain, and creativity becomes legacy** 🏆⚽
+**Where World Cup fandom meets blockchain, on X Layer** 🏆⚽
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Solidity](https://img.shields.io/badge/Solidity-363636?style=for-the-badge&logo=solidity&logoColor=white)](https://soliditylang.org/)
+Built for [OKX X Cup Hackathon](https://web3.okx.com/xlayer/build-x-hackathon/xcup) — tag [@XLayerOfficial](https://x.com/XLayerOfficial)
 
 </div>
 
 ---
 
-## 🌟 **Powered by Chiliz Fan Tokens** 🌟
+## 🌟 Powered by X Layer + Country Fan Tokens
 
-<div align="center">
+Fanvas is a blockchain-powered platform that lets World Cup fans design, vote, and own official team visuals — gated by holding country fan tokens (ARG / BRA / FRA) on X Layer Testnet.
 
-![Chiliz Integration](https://img.shields.io/badge/PSG%20Tokens-Required%20for%20Voting%20%26%20Bidding-brightgreen?style=for-the-badge)
-![Fan Engagement](https://img.shields.io/badge/Fan%20Engagement-Token%20Gated%20Access-blue?style=for-the-badge)
-![PSG Contract](https://img.shields.io/badge/PSG%20Contract-0xC1771089870D3dDF8174775ed12D09Ff8DeCc550-purple?style=for-the-badge)
-
-</div>
-
-**Fanvas** is a revolutionary blockchain-powered platform that lets fans design, vote, and own official club visuals — **all powered by Chiliz fan tokens**.
-
-Supporters can create **Tifos**, **Jerseys**, **Posters**, **Matchday Tickets**, and **Stadium Banners** using our in-app 3D canvas tool — an intuitive board where anyone can unleash creativity, even without prior design experience.
+Supporters can create **Tifos**, **Jerseys**, **Posters**, **Matchday Tickets**, and **Stadium Banners** using our in-app 3D canvas tool.
 
 ---
 
-## 🚀 **What makes Fanvas revolutionary?**
+## 🚀 What makes Fanvas X Cup work?
 
-<div align="center">
-
-| Feature | Description | Chiliz Integration |
-|---------|-------------|-------------------|
-| 🗳️ **Decentralized Voting** | Token-gated voting system | Requires PSG tokens to vote |
-| 🏆 **NFT Minting** | Winners get minted as NFTs | Fan token holders shape outcomes |
-| 💰 **Fan-Only Auctions** | Exclusive bidding for token holders | PSG tokens required to bid |
-
-</div>
+| Feature | Description | X Layer Integration |
+|---------|-------------|---------------------|
+| 🗳️ **Decentralized Voting** | Token-gated voting | Holding ≥10 of any country fan token unlocks voting |
+| 🏆 **NFT Minting** | Winners minted on X Layer | ERC-721 with IPFS metadata |
+| 💰 **Fan-Only Auctions** | Exclusive bidding | OKB bids on X Layer Testnet |
 
 ### 🎯 **Key Innovations**
 
-- **🗳️ Decentralized & Token-Gated Voting**: Only fans holding a minimum number of club fan tokens (e.g., **PSG tokens on Chiliz**) can vote on the best designs — ensuring that real fans shape the club's visuals, not just a central team.
+- **🗳️ Decentralized & Token-Gated Voting**: Only fans holding a minimum number of country fan tokens (e.g., **ARG / BRA / FRA tokens on X Layer**) can vote on the best designs — ensuring that real fans shape the team's visuals, not just a central team.
 
 - **🏆 NFT Minting for Winners**: Top-voted designs are minted as NFTs. Imagine seeing your fan-designed Tifo at a legendary match, and owning it digitally forever. These moments are captured as NFTs and tied to their creators — **your fandom becomes your legacy**.
 
-- **💰 Fan-Only Auctions**: Once minted, the winning NFTs are listed for auction. Bidding requires a minimum fan token balance, making sure it's **fans supporting fans** — using Chiliz (CHZ) as the currency.
+- **💰 Fan-Only Auctions**: Once minted, the winning NFTs are listed for auction. Bidding requires a minimum fan token balance, making sure it's **fans supporting fans** — using OKB as the currency on X Layer.
 
-> **Fanvas isn't just a platform — it's a movement to democratize fan-driven creativity, giving real supporters a say in how their club looks and feels.**
+> **Fanvas isn't just a platform — it's a movement to democratize fan-driven creativity, giving real supporters a say in how their team looks and feels.**
 
-By bridging fan culture with Web3, Fanvas creates emotional and economic value, incentivizing creativity, and **expanding utility for fan tokens** — all while fueling the growth of the **Chiliz ecosystem**.
+By bridging fan culture with Web3, Fanvas creates emotional and economic value, incentivizing creativity, and **expanding utility for fan tokens** — all while fueling the growth of the **X Layer ecosystem**.
 
 ---
 
@@ -94,7 +79,7 @@ struct Auction {
     uint256 highestBid;
     address highestBidder;
     uint256 minBid;
-    uint256 requiredPsgTokens;  // 🎯 Chiliz Integration
+    uint256 requiredFanTokens;  // 🎯 X Layer Fan Token Integration
     bool active;
 }
 ```
@@ -130,7 +115,7 @@ struct Auction {
 
 3. **`submitToPool(uint256, string)`** - *Token-Gated*
    - Allows fans to submit content to an active pool
-   - **Requires minimum 10 PSG tokens balance** 🎯
+   - **Requires minimum 10 country fan tokens balance (ARG / BRA / FRA)** 🎯
    - Content URL points to IPFS/metadata
    - Emits `SubmissionMade` event
 
@@ -138,7 +123,7 @@ struct Auction {
 
 4. **`vote(uint256, uint256)`** - *Token-Gated*
    - Allows fans to vote on submissions
-   - **Requires minimum 10 PSG tokens balance** 🎯
+   - **Requires minimum 10 country fan tokens balance (ARG / BRA / FRA)** 🎯
    - One vote per wallet per pool
    - Only active during voting period
    - Emits `Voted` event
@@ -157,13 +142,13 @@ struct Auction {
 
 6. **`createAuction(uint256, uint256, uint256)`**
    - Allows NFT owners to create auctions
-   - Sets minimum bid and **required PSG tokens for bidders** 🎯
+   - Sets minimum bid and **required fan tokens for bidders** 🎯
    - Only NFT owner can create auction
    - Emits `AuctionCreated` event
 
 7. **`placeBid(uint256)`** - *Payable*
    - Allows fans to bid on NFTs
-   - **Requires minimum PSG token balance** 🎯
+   - **Requires minimum fan token balance (ARG / BRA / FRA)** 🎯
    - Bid must be higher than current highest bid
    - Automatically refunds previous highest bidder
    - Emits `BidPlaced` event
@@ -213,12 +198,12 @@ struct Auction {
 
 | Category | Technology | Purpose |
 |----------|------------|---------|
-| 🔗 **Smart Contracts** | Solidity, OpenZeppelin | Blockchain logic |
-| 🎨 **Frontend** | Next.js, TypeScript, Tailwind CSS | User interface |
-| 🗄️ **Database** | Supabase (PostgreSQL) | Data storage |
+| 🔗 **Smart Contracts** | Solidity 0.8.25 + OpenZeppelin | Blockchain logic |
+| 🎨 **Frontend** | Next.js 15, TypeScript, Tailwind 4 | User interface |
+| 🗄️ **Database** | Supabase (PostgreSQL) | Indexing on-chain events |
 | 📁 **Storage** | IPFS via Pinata | Content storage |
-| ⛓️ **Blockchain** | **Chiliz Spicy Testnet** | **Smart contract execution** |
-| 🎯 **Fan Tokens** | **PSG Token (0xC1771089870D3dDF8174775ed12D09Ff8DeCc550)** | **Token-gated access** |
+| ⛓️ **Blockchain** | **X Layer Testnet (chainId 1952)** | Smart contract execution |
+| 🎯 **Fan Tokens** | **ARG / BRA / FRA on X Layer** | Country-based gating |
 
 </div>
 
@@ -229,8 +214,8 @@ struct Auction {
 ### 📋 **Prerequisites**
 - Node.js 18+
 - MetaMask wallet
-- **PSG tokens (for testing)** 🎯
-- **Chiliz Spicy testnet configuration**
+- **ARG / BRA / FRA fan tokens (for testing)** 🎯
+- **X Layer Testnet configuration**
 
 ### 🔧 **Smart Contract Setup**
 ```bash
@@ -240,8 +225,8 @@ npm install
 # Compile contracts
 npx hardhat compile
 
-# Deploy to Chiliz Spicy testnet
-npx hardhat run scripts/deploy.js --network chiliz-spicy
+# Deploy to X Layer Testnet
+npx hardhat run scripts/deploy.js --network xlayer-testnet
 ```
 
 ### 🎨 **Frontend Setup**
@@ -264,12 +249,12 @@ npm run dev
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Contract
-NEXT_PUBLIC_FAN_ART_CONTRACT_ADDRESS=your_contract_address
-
-# Chiliz Configuration
-NEXT_PUBLIC_CHILIZ_NETWORK_ID=88882
-NEXT_PUBLIC_PSG_TOKEN_ADDRESS=0xC1771089870D3dDF8174775ed12D09Ff8DeCc550
+# X Layer Testnet contracts (from deployment-addresses.json)
+NEXT_PUBLIC_XLAYER_CHAIN_ID=1952
+NEXT_PUBLIC_FAN_ART_CONTRACT_ADDRESS=0xf569938CdcFa89D7a77a297b399ef1F68505421C
+NEXT_PUBLIC_ARG_TOKEN_ADDRESS=0x8945e2258C286fB0201DeD69bB7d9632eFC6571C
+NEXT_PUBLIC_BRA_TOKEN_ADDRESS=0x0E87334cE7557A7BC8B5b692d7Cc2cB1a85F4f3A
+NEXT_PUBLIC_FRA_TOKEN_ADDRESS=0xe948985DEfB690301C0Fd774bBCE3b4aeeb0CA5C
 
 # Pinata
 PINATA_JWT=your_pinata_jwt
@@ -281,11 +266,11 @@ PINATA_GATEWAY_URL=your_pinata_gateway_url
 ## 🎯 **Usage Guide**
 
 ### 👥 **For Fans**
-1. **🔗 Connect Wallet**: Connect MetaMask with **PSG tokens** 🎯
+1. **🔗 Connect Wallet**: Connect MetaMask with **ARG / BRA / FRA fan tokens** 🎯
 2. **🏊‍♂️ Browse Pools**: View active fan engagement pools
 3. **🎨 Create Content**: Use 3D canvas to design fan art
 4. **📝 Submit**: Upload your creation to a pool
-5. **🗳️ Vote**: Vote on other submissions (**requires PSG tokens** 🎯)
+5. **🗳️ Vote**: Vote on other submissions (**requires country fan tokens** 🎯)
 6. **🏆 Own NFTs**: Win and own minted NFTs
 7. **🛒 Trade**: Buy/sell NFTs in the auction marketplace
 
@@ -303,7 +288,7 @@ PINATA_GATEWAY_URL=your_pinata_gateway_url
 
 | Security Feature | Description | Implementation |
 |------------------|-------------|----------------|
-| 🎯 **Token-Gated Access** | Minimum PSG token requirements | Chiliz integration |
+| 🎯 **Token-Gated Access** | Minimum fan token requirements | X Layer integration |
 | 👑 **Owner Controls** | Restricted pool management | OpenZeppelin Ownable |
 | 🗳️ **Vote Protection** | One vote per wallet per pool | Smart contract logic |
 | 🛒 **Auction Security** | Automatic bid refunds | ETH transfer handling |
@@ -319,16 +304,16 @@ PINATA_GATEWAY_URL=your_pinata_gateway_url
 
 | Token | Purpose | Integration |
 |-------|---------|-------------|
-| **🎯 PSG Tokens** | **Voting & Bidding Access** | **Chiliz Fan Tokens** |
-| **⛓️ CHZ** | **Auction Bidding** | **Chiliz Native Currency** |
+| **🎯 ARG / BRA / FRA Tokens** | **Voting & Bidding Access** | **X Layer Fan Tokens** |
+| **⛓️ OKB** | **Auction Bidding** | **X Layer Native Currency** |
 | **🏆 NFTs** | **Winner Rewards** | **ERC-721 Tokens** |
 
 </div>
 
-- **🎯 PSG Token Integration**: Required for voting and bidding
-- **⛓️ CHZ for Bidding**: Chiliz native currency for NFT auctions
+- **🎯 Country Fan Token Integration**: ARG / BRA / FRA tokens required for voting and bidding
+- **⛓️ OKB for Bidding**: X Layer native currency for NFT auctions
 - **🏆 Creator Rewards**: NFT ownership for winning submissions
-- **📈 Fan Token Utility**: Increased demand for PSG tokens
+- **📈 Fan Token Utility**: Increased demand for country fan tokens on X Layer
 
 ---
 
@@ -338,26 +323,24 @@ PINATA_GATEWAY_URL=your_pinata_gateway_url
 
 | Environment | Network | Purpose |
 |-------------|---------|---------|
-| 🧪 **Development** | **Chiliz Spicy Testnet** | **Testing & Development** |
-| 🚀 **Production** | **Chiliz Mainnet** | **Live Platform** |
+| 🧪 **Development** | **X Layer Testnet** | **Testing & Development** |
+| 🚀 **Production** | **X Layer Mainnet** | **Live Platform** |
 
 </div>
 
-### **🌶️ Chiliz Spicy Testnet Configuration**
+### 🌍 X Layer Testnet Configuration
+
 ```javascript
-// Network Configuration
 {
-  chainId: 88882,
-  chainName: 'Chiliz Spicy Testnet',
-  nativeCurrency: {
-    name: 'CHZ',
-    symbol: 'CHZ',
-    decimals: 18
-  },
-  rpcUrls: ['https://spicy-rpc.chiliz.com'],
-  blockExplorerUrls: ['https://spicy-explorer.chiliz.com']
+  chainId: 1952,
+  chainName: 'X Layer Testnet',
+  nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+  rpcUrls: ['https://testrpc.xlayer.tech'],
+  blockExplorerUrls: ['https://www.oklink.com/xlayer-test']
 }
 ```
+
+Faucet: https://web3.okx.com/xlayer/faucet/xlayerfaucet
 
 ---
 
@@ -409,7 +392,7 @@ MIT License - see LICENSE file for details
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 🏟️ **Multi-club support** | 🔄 Planned | Expand beyond PSG |
+| 🏟️ **Multi-team support** | 🔄 Planned | Expand beyond 3 countries |
 | 🎨 **Advanced 3D tools** | 🔄 Planned | Enhanced design features |
 | 📱 **Mobile app** | 🔄 Planned | iOS & Android apps |
 | 👥 **Social features** | 🔄 Planned | Community features |
@@ -422,10 +405,10 @@ MIT License - see LICENSE file for details
 
 <div align="center">
 
-## 🏆 **Fanvas** - Where fandom meets blockchain, and creativity becomes legacy. ⚽
+## 🏆 **Fanvas X Cup** - Where World Cup fandom meets blockchain, on X Layer. ⚽
 
-**Powered by Chiliz Fan Tokens** 🎯
+**Powered by X Layer + Country Fan Tokens (ARG / BRA / FRA)** 🎯
 
-**PSG Token Contract**: `0xC1771089870D3dDF8174775ed12D09Ff8DeCc550`
+**X Layer Testnet chainId**: `1952`
 
 </div> 
