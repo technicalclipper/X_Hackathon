@@ -51,7 +51,7 @@ export default function ClubSelect() {
       isAvailable: argBalance >= 1,
       memberCount: 41000,
       description: "Reigning World Cup champions",
-      logoPath: "/logos/arg.jpg",
+      logoPath: "/logos/argentina.png",
     },
     {
       id: "BRA",
@@ -62,7 +62,7 @@ export default function ClubSelect() {
       isAvailable: braBalance >= 1,
       memberCount: 52000,
       description: "Five-time World Cup winners",
-      logoPath: "/logos/bra.png",
+      logoPath: "/logos/brazil.png",
     },
     {
       id: "FRA",
@@ -73,7 +73,7 @@ export default function ClubSelect() {
       isAvailable: fraBalance >= 1,
       memberCount: 38000,
       description: "Les Bleus on the world stage",
-      logoPath: "/logos/fra.webp",
+      logoPath: "/logos/france.png",
     },
   ];
 

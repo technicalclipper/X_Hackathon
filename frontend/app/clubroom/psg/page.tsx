@@ -91,7 +91,7 @@ function PSGClubRoom() {
   const team = ((searchParams.get("team") || "ARG").toUpperCase()) as "ARG" | "BRA" | "FRA";
   const teamLabel = ({ ARG: "ARGENTINA", BRA: "BRAZIL", FRA: "FRANCE" } as const)[team] || "ARGENTINA";
   const teamFlag = ({ ARG: "🇦🇷", BRA: "🇧🇷", FRA: "🇫🇷" } as const)[team] || "🇦🇷";
-  const teamLogo = ({ ARG: "/logos/arg.jpg", BRA: "/logos/bra.png", FRA: "/logos/fra.webp" } as const)[team];
+  const teamLogo = ({ ARG: "/logos/argentina.png", BRA: "/logos/brazil.png", FRA: "/logos/france.png" } as const)[team];
   const [activeSection, setActiveSection] = useState("overview");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [scrollY, setScrollY] = useState(0);
