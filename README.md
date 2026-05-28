@@ -10,6 +10,20 @@
 
 Built for [OKX X Cup Hackathon](https://web3.okx.com/xlayer/build-x-hackathon/xcup) — tag [@XLayerOfficial](https://x.com/XLayerOfficial)
 
+🌐 **[Live Demo → fanvasx.vercel.app](https://fanvasx.vercel.app)**
+
+</div>
+
+---
+
+## 🎬 Demo
+
+<div align="center">
+
+<video src="media/fanvas canva.mp4" width="100%" controls></video>
+
+> _Can't play inline? [Download the demo video](media/fanvas%20canva.mp4)_
+
 </div>
 
 ---
